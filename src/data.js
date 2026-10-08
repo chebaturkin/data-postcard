@@ -545,7 +545,6 @@ export function normalizeDataset({ headers = [], rows = [] } = {}) {
   const normalizedRows = (Array.isArray(rows) ? rows : []).map((row) => rowToObject(normalizedHeaders, row));
   return {
     headers: normalizedHeaders,
-    sourceHeaders,
     rows: normalizedRows,
     rawRows: normalizedRows.map((row) => ({ ...row })),
     rowCount: normalizedRows.length
@@ -565,10 +564,21 @@ export function parseText(text, filename = '', options = {}) {
       : 'paste';
   const extension = sourceName.toLowerCase().split('?')[0].split('#')[0].split('.').pop();
   const trimmed = source.replace(/^\uFEFF/, '').trimStart();
-  const parser = extension === 'json' || trimmed.startsWith('{') || trimmed.startsWith('[') ? parseJson : parseCsv;
+  const parser = extension === 'json'
+    ? parseJson
+    : ['csv', 'tsv'].includes(extension)
+      ? parseCsv
+      : (trimmed.startsWith('{') || trimmed.startsWith('[') ? parseJson : parseCsv);
   const parsed = parser(source);
   const validation = validateDataset({ ...parsed });
-  const errors = [...(parsed.errors || []), ...validation.errors.filter((candidate) => !(parsed.errors || []).some((existing) => existing.code === candidate.code && existing.row === candidate.row && existing.column === candidate.column))];
+  const parserErrorCodes = new Set((parsed.errors || []).map((error) => error.code));
+  const validationErrors = validation.errors.filter((candidate) => {
+    if (parserErrorCodes.has('invalid-json') || parserErrorCodes.has('invalid-json-shape')) {
+      return candidate.code !== 'empty-file';
+    }
+    return true;
+  });
+  const errors = [...(parsed.errors || []), ...validationErrors.filter((candidate) => !(parsed.errors || []).some((existing) => existing.code === candidate.code && existing.row === candidate.row && existing.column === candidate.column))];
   const warnings = [...(parsed.warnings || []), ...validation.warnings];
 
   if (errors.some((candidate) => BLOCKING_ERROR_CODES.has(candidate.code))) {

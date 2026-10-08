@@ -150,3 +150,16 @@ test('parseText accepts explicit source mode options without changing the legacy
   const file = parseText(source, 'scores.csv');
   assert.equal(file.dataset.sourceMode, 'file');
 });
+
+test('parseText honors an explicit CSV filename before content sniffing', () => {
+  const result = parseText('[name],score\nA,1\nB,2\nC,3\nD,4\nE,5', 'values.csv');
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.dataset.headers[0], '[name]');
+});
+
+test('parseText does not duplicate the root JSON parse error with an empty-file error', () => {
+  const result = parseText('{"items": [', 'broken.json');
+  assert.equal(result.dataset, null);
+  assert.equal(result.errors.filter((error) => error.code === 'invalid-json').length, 1);
+  assert.equal(result.errors.filter((error) => error.code === 'empty-file').length, 0);
+});

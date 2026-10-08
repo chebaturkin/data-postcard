@@ -3,8 +3,6 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#f2eee5" />
-    <meta name="description" content="Data Postcard — локальная визуальная открытка из небольшого CSV или JSON." />
     <title>Data Postcard — field notes in numbers</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
@@ -36,12 +34,15 @@
               id="postcard-preview"
               class="postcard-preview"
               role="img"
-              aria-labelledby="postcard-title postcard-caption"
+              aria-labelledby="scene-title scene-desc"
               viewBox="0 0 1200 900"
               preserveAspectRatio="xMidYMid meet"
-            ></svg>
+            >
+              <title id="scene-title">Предпросмотр открытки</title>
+              <desc id="scene-desc">Визуальное представление выбранного набора данных.</desc>
+            </svg>
             <div class="postcard-paper__footer">
-              <p class="postcard-paper__source" id="postcard-source">локальная заметка · sample reading</p>
+              <p class="postcard-paper__source" id="postcard-source">локальная заметка · чтение</p>
               <p class="postcard-paper__mark" aria-hidden="true">DP—01</p>
             </div>
           </div>
@@ -67,7 +68,7 @@
             role="button"
             aria-describedby="drop-help data-errors"
           >
-            <input id="file-input" class="visually-hidden" type="file" accept=".csv,.json,text/csv,application/json" />
+            <input id="file-input" class="visually-hidden" type="file" tabindex="-1" accept=".csv,.json,text/csv,application/json" />
             <span class="drop-zone__icon" aria-hidden="true">↘</span>
             <span class="drop-zone__title">Перетащите файл сюда</span>
             <span class="drop-zone__hint" id="drop-help">CSV или JSON, до 20 строк</span>
@@ -178,9 +179,9 @@
             <span class="section-index">06</span>
           </div>
           <div class="export-list">
-            <button class="export-button" id="export-png" type="button"><span>PNG</span><small>изображение</small></button>
-            <button class="export-button" id="export-svg" type="button"><span>SVG</span><small>вектор</small></button>
-            <button class="export-button" id="export-html" type="button"><span>HTML</span><small>автономная страница</small></button>
+            <button class="export-button" id="export-png" type="button" disabled><span>PNG</span><small>изображение</small></button>
+            <button class="export-button" id="export-svg" type="button" disabled><span>SVG</span><small>вектор</small></button>
+            <button class="export-button" id="export-html" type="button" disabled><span>HTML</span><small>автономная страница</small></button>
           </div>
           <p class="privacy-note"><span aria-hidden="true">⌁</span> Данные остаются в этом браузере.</p>
         </section>
