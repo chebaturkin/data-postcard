@@ -10,6 +10,20 @@
 const MIN_ROWS = 5;
 const MAX_ROWS = 20;
 
+const BLOCKING_ERROR_CODES = new Set([
+  'empty-file',
+  'invalid-json',
+  'invalid-json-shape',
+  'csv-parse',
+  'row-count',
+  'invalid-number',
+  'invalid-date',
+  'duplicate-header',
+  'missing-header',
+  'inconsistent-header',
+  'inconsistent-row'
+]);
+
 const NUMBER_HINTS = /(?:^|[_\s-])(amount|count|number|num|value|score|rating|total|quantity|qty|minutes?|temperature|temp|height|weight|distance|price|cost|amount|числ|колич|значен|сумм|оценк|минут|температур|круг)/i;
 const DATE_HINTS = /(?:^|[_\s-])(date|datetime|timestamp|time|дата|время)/i;
 
@@ -22,6 +36,40 @@ function issue(code, message, details = {}) {
 
 function cleanHeader(value) {
   return String(value ?? '').replace(/^\uFEFF/, '').trim();
+}
+
+/**
+ * Give cleaned source headers stable object keys. Source labels stay in a
+ * parallel array so duplicate-after-cleaning errors can still name the
+ * original column while every source cell remains addressable.
+ */
+function stableHeaderKeys(sourceHeaders) {
+  const used = new Set();
+  const counts = new Map();
+  return sourceHeaders.map((value, index) => {
+    const label = cleanHeader(value);
+    const base = label || `column_${index + 1}`;
+    const baseKey = base.toLocaleLowerCase();
+    let count = counts.get(baseKey) || 0;
+    let key = count === 0 ? base : `${base}__${count + 1}`;
+    while (used.has(key.toLocaleLowerCase())) {
+      count += 1;
+      key = `${base}__${count + 1}`;
+    }
+    counts.set(baseKey, count + 1);
+    used.add(key.toLocaleLowerCase());
+    return key;
+  });
+}
+
+function objectFromCells(headers, cells) {
+  const result = rowToObject(headers, cells);
+  // Retain cells beyond the declared header count until validation reports the
+  // inconsistent row. This keeps malformed source data inspectable.
+  for (let index = headers.length; index < cells.length; index += 1) {
+    result[`__extra_${index - headers.length + 1}`] = cells[index];
+  }
+  return result;
 }
 
 function rowToObject(headers, row) {
@@ -45,6 +93,7 @@ function parseCsvRows(text) {
   let field = '';
   let quoted = false;
   let justClosedQuote = false;
+  const errors = [];
 
   for (let index = 0; index < source.length; index += 1) {
     const char = source[index];
@@ -83,9 +132,18 @@ function parseCsvRows(text) {
       row = [];
       field = '';
       justClosedQuote = false;
+    } else if (justClosedQuote && /\s/.test(char)) {
+      // Whitespace may separate a closing quote from the delimiter. Keep the
+      // state so a later non-whitespace character is still reported.
+      field += char;
     } else if (justClosedQuote && !/\s/.test(char)) {
       // A character immediately after a closing quote is malformed CSV. Keep
       // the value readable but report it to the caller.
+      errors.push(issue(
+        'csv-parse',
+        'После закрывающей кавычки найден недопустимый символ.',
+        { row: matrix.length + 1, column: row.length + 1 }
+      ));
       field += char;
       justClosedQuote = false;
     } else {
@@ -95,7 +153,8 @@ function parseCsvRows(text) {
   }
 
   if (quoted) {
-    return { matrix, errors: [issue('csv-parse', 'Кавычки в CSV не закрыты.')], malformed: true };
+    errors.push(issue('csv-parse', 'Кавычки в CSV не закрыты.', { row: matrix.length + 1, column: row.length + 1 }));
+    return { matrix, errors, malformed: true };
   }
 
   // The final empty line should not become an extra data row. A row containing
@@ -105,7 +164,7 @@ function parseCsvRows(text) {
     matrix.push(row);
   }
 
-  return { matrix, errors: [] };
+  return { matrix, errors, malformed: errors.length > 0 };
 }
 
 /** Parse a CSV string, retaining source values as strings. */
@@ -120,10 +179,11 @@ export function parseCsv(text) {
     };
   }
 
-  const headers = (matrix[0] ?? []).map(cleanHeader);
+  const sourceHeaders = (matrix[0] ?? []).map(cleanHeader);
+  const headers = stableHeaderKeys(sourceHeaders);
   const rows = matrix.slice(1).filter((cells) => !(cells.length === 1 && cells[0] === '' && matrix.length > 2));
   const rowLengths = rows.map((cells) => cells.length);
-  const errors = [...parsed.errors];
+  const errors = [...parsed.errors, ...duplicateHeaderIssues(sourceHeaders)];
   const expectedLength = headers.length;
   rows.forEach((cells, index) => {
     if (cells.length !== expectedLength) {
@@ -137,7 +197,8 @@ export function parseCsv(text) {
 
   return {
     headers,
-    rows: rows.map((cells) => rowToObject(headers, cells)),
+    rows: rows.map((cells) => objectFromCells(headers, cells)),
+    sourceHeaders,
     rowLengths,
     errors,
     warnings: []
@@ -204,20 +265,27 @@ export function parseJson(text) {
     }
     return row;
   });
-  const headers = headersFromObjects(objectRows);
-  if (headers.length === 0 && objectRows.length > 0) {
+  const rawHeaders = headersFromObjects(objectRows);
+  const sourceHeaders = rawHeaders.map(cleanHeader);
+  const headers = stableHeaderKeys(sourceHeaders);
+  if (sourceHeaders.length === 0 && objectRows.length > 0) {
     errors.push(issue('missing-header', 'В JSON не найдено ни одной колонки.'));
   }
-  const cleanHeaders = headers.map(cleanHeader);
   const cleanedRows = objectRows.map((row) => {
     const cleaned = {};
-    headers.forEach((header, index) => { cleaned[cleanHeaders[index]] = row[header]; });
+    rawHeaders.forEach((rawHeader, index) => {
+      const key = headers[index];
+      if (key && Object.prototype.hasOwnProperty.call(row, rawHeader)) cleaned[key] = row[rawHeader];
+    });
     return cleaned;
   });
 
+  errors.push(...duplicateHeaderIssues(sourceHeaders));
+
   return {
-    headers: cleanHeaders,
-    rows: cleanedRows.map((row) => rowToObject(cleanHeaders, row)),
+    headers,
+    rows: cleanedRows.map((row) => rowToObject(headers, row)),
+    sourceHeaders,
     rowLengths: objectRows.map(rowLength),
     errors,
     warnings
@@ -383,13 +451,19 @@ export function validateDataset(headersOrDataset, maybeRows) {
   const source = Array.isArray(headersOrDataset)
     ? { headers: headersOrDataset, rows: maybeRows }
     : (headersOrDataset || {});
-  const headers = Array.isArray(source.headers) ? source.headers.map(cleanHeader) : [];
+  const incomingHeaders = Array.isArray(source.headers) ? source.headers.map(cleanHeader) : [];
+  const sourceHeaders = Array.isArray(source.sourceHeaders)
+    ? source.sourceHeaders.map(cleanHeader)
+    : incomingHeaders;
+  const headers = Array.isArray(source.sourceHeaders)
+    ? incomingHeaders
+    : stableHeaderKeys(incomingHeaders);
   const sourceRows = Array.isArray(source.rows) ? source.rows : [];
   const normalized = normalizeDataset({ headers, rows: sourceRows });
   const errors = [];
   const warnings = [];
 
-  errors.push(...duplicateHeaderIssues(headers));
+  errors.push(...duplicateHeaderIssues(sourceHeaders));
   const isEmpty = headers.length === 0 && sourceRows.length === 0;
   if (isEmpty) {
     errors.push(issue('empty-file', 'Файл пустой.'));
@@ -412,21 +486,26 @@ export function validateDataset(headersOrDataset, maybeRows) {
     errors.push(issue('row-count', `Можно использовать максимум ${MAX_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   }
 
-  const columns = inferColumns(headers, normalized.rows);
+  const columns = inferColumns(headers, normalized.rows).map((column, index) => ({
+    ...column,
+    name: sourceHeaders[index] || column.name
+  }));
   const typedRows = normalized.rows.map((row, rowIndex) => {
     const typed = {};
     headers.forEach((header) => {
+      const headerIndex = headers.indexOf(header);
+      const label = sourceHeaders[headerIndex] || header;
       const original = row[header];
       if (isMissing(original)) {
         typed[header] = null;
-        warnings.push(issue('missing-value', `Строка ${rowIndex + 2}, колонка «${header}»: значение пустое.`, { row: rowIndex + 2, column: header }));
+        warnings.push(issue('missing-value', `Строка ${rowIndex + 2}, колонка «${label}»: значение пустое.`, { row: rowIndex + 2, column: label }));
         return;
       }
       const column = columns.find((candidate) => candidate.key === header);
       if (column?.type === 'number') {
         const number = parseNumber(original);
         if (number === null) {
-          errors.push(issue('invalid-number', `Строка ${rowIndex + 2}, колонка «${header}»: «${String(original)}» не является числом.`, { row: rowIndex + 2, column: header }));
+          errors.push(issue('invalid-number', `Строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является числом.`, { row: rowIndex + 2, column: label }));
           typed[header] = null;
         } else {
           typed[header] = number;
@@ -434,7 +513,7 @@ export function validateDataset(headersOrDataset, maybeRows) {
       } else if (column?.type === 'date') {
         const date = parseDate(original);
         if (date === null) {
-          errors.push(issue('invalid-date', `Строка ${rowIndex + 2}, колонка «${header}»: «${String(original)}» не является датой.`, { row: rowIndex + 2, column: header, reason: 'mixed-date' }));
+          errors.push(issue('invalid-date', `Строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является датой.`, { row: rowIndex + 2, column: label, reason: 'mixed-date' }));
           typed[header] = original;
         } else {
           typed[header] = date;
@@ -448,6 +527,7 @@ export function validateDataset(headersOrDataset, maybeRows) {
 
   return {
     headers,
+    sourceHeaders,
     rows: typedRows,
     rawRows: normalized.rows,
     columns,
@@ -460,10 +540,12 @@ export function validateDataset(headersOrDataset, maybeRows) {
 
 /** Normalize row arrays/objects to objects keyed by the declared headers. */
 export function normalizeDataset({ headers = [], rows = [] } = {}) {
-  const normalizedHeaders = Array.isArray(headers) ? headers.map(cleanHeader) : [];
+  const sourceHeaders = Array.isArray(headers) ? headers.map(cleanHeader) : [];
+  const normalizedHeaders = stableHeaderKeys(sourceHeaders);
   const normalizedRows = (Array.isArray(rows) ? rows : []).map((row) => rowToObject(normalizedHeaders, row));
   return {
     headers: normalizedHeaders,
+    sourceHeaders,
     rows: normalizedRows,
     rawRows: normalizedRows.map((row) => ({ ...row })),
     rowCount: normalizedRows.length
@@ -471,9 +553,17 @@ export function normalizeDataset({ headers = [], rows = [] } = {}) {
 }
 
 /** Parse, validate and normalize CSV/JSON text based on filename or content. */
-export function parseText(text, filename = '') {
+export function parseText(text, filename = '', options = {}) {
   const source = String(text ?? '');
-  const extension = String(filename).toLowerCase().split('?')[0].split('#')[0].split('.').pop();
+  const filenameIsOptions = isObject(filename);
+  const sourceOptions = filenameIsOptions ? filename : (isObject(options) ? options : {});
+  const sourceName = filenameIsOptions ? '' : String(filename ?? '');
+  const sourceMode = sourceOptions.source === 'paste' || sourceOptions.pasted === true
+    ? 'paste'
+    : sourceOptions.source === 'file' || sourceName
+      ? 'file'
+      : 'paste';
+  const extension = sourceName.toLowerCase().split('?')[0].split('#')[0].split('.').pop();
   const trimmed = source.replace(/^\uFEFF/, '').trimStart();
   const parser = extension === 'json' || trimmed.startsWith('{') || trimmed.startsWith('[') ? parseJson : parseCsv;
   const parsed = parser(source);
@@ -481,17 +571,19 @@ export function parseText(text, filename = '') {
   const errors = [...(parsed.errors || []), ...validation.errors.filter((candidate) => !(parsed.errors || []).some((existing) => existing.code === candidate.code && existing.row === candidate.row && existing.column === candidate.column))];
   const warnings = [...(parsed.warnings || []), ...validation.warnings];
 
-  if (errors.some((candidate) => candidate.code === 'invalid-json' || candidate.code === 'invalid-json-shape' || candidate.code === 'csv-parse' || candidate.code === 'empty-file')) {
+  if (errors.some((candidate) => BLOCKING_ERROR_CODES.has(candidate.code))) {
     return { dataset: null, errors, warnings };
   }
 
   const dataset = {
     headers: validation.headers,
+    sourceHeaders: validation.sourceHeaders,
     rows: validation.rows,
     rawRows: validation.rawRows,
     columns: validation.columns,
     rowCount: validation.rowCount,
-    source: filename || 'pasted data',
+    source: sourceName || 'pasted data',
+    sourceMode,
     valid: validation.valid && errors.length === 0
   };
   return { dataset, errors, warnings };

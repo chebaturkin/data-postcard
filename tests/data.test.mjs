@@ -96,3 +96,57 @@ test('parseCsv treats whitespace-only input as empty', () => {
   const result = parseCsv('\n\r\n');
   assert.ok(result.errors.some((error) => error.code === 'empty-file'));
 });
+
+test('parseText blocks datasets that do not meet the row-count contract', () => {
+  const result = parseText('name,score\nA,1\nB,2\nC,3\nD,4', 'scores.csv');
+  assert.equal(result.dataset, null);
+  assert.ok(result.errors.some((error) => error.code === 'row-count'));
+});
+
+test('parseText blocks invalid inferred number and date values', () => {
+  const invalidNumber = parseText(
+    'date,value\n2026-10-01,1\n2026-10-02,2\n2026-10-03,nope\n2026-10-04,4\n2026-10-05,5',
+    'values.csv'
+  );
+  assert.equal(invalidNumber.dataset, null);
+  assert.ok(invalidNumber.errors.some((error) => error.code === 'invalid-number'));
+
+  const invalidDate = parseText(
+    'date,value\n2026-10-01,1\n2026-10-02,2\nnot-a-date,3\n2026-10-04,4\n2026-10-05,5',
+    'values.csv'
+  );
+  assert.equal(invalidDate.dataset, null);
+  assert.ok(invalidDate.errors.some((error) => error.code === 'invalid-date'));
+});
+
+test('parseText blocks duplicate headers after cleaning while retaining both source cells', () => {
+  const source = [
+    'name, score ,score',
+    'A,1,10',
+    'B,2,20',
+    'C,3,30',
+    'D,4,40',
+    'E,5,50',
+  ].join('\n');
+  const parsed = parseCsv(source);
+  assert.deepEqual(parsed.headers, ['name', 'score', 'score__2']);
+  assert.deepEqual(parsed.rows[0], { name: 'A', score: '1', score__2: '10' });
+  assert.ok(parsed.errors.some((error) => error.code === 'duplicate-header'));
+
+  const result = parseText(source, 'scores.csv');
+  assert.equal(result.dataset, null);
+  assert.ok(result.errors.some((error) => error.code === 'duplicate-header'));
+});
+
+test('parseCsv reports non-whitespace characters after a closing quote', () => {
+  const result = parseCsv('name,score\n"A"x,1\nB,2\nC,3\nD,4\nE,5');
+  assert.ok(result.errors.some((error) => error.code === 'csv-parse'));
+});
+
+test('parseText accepts explicit source mode options without changing the legacy signature', () => {
+  const source = 'name,score\nA,1\nB,2\nC,3\nD,4\nE,5';
+  const pasted = parseText(source, 'scores.csv', { source: 'paste' });
+  assert.equal(pasted.dataset.sourceMode, 'paste');
+  const file = parseText(source, 'scores.csv');
+  assert.equal(file.dataset.sourceMode, 'file');
+});
