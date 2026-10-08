@@ -359,7 +359,8 @@ export function validateDataset(headersOrDataset, maybeRows) {
   const warnings = [];
 
   errors.push(...duplicateHeaderIssues(headers));
-  if (headers.length === 0 && sourceRows.length === 0) {
+  const isEmpty = headers.length === 0 && sourceRows.length === 0;
+  if (isEmpty) {
     errors.push(issue('empty-file', 'Файл пустой.'));
   } else if (headers.length === 0) {
     errors.push(issue('missing-header', 'Не найдено ни одной колонки.'));
@@ -374,7 +375,7 @@ export function validateDataset(headersOrDataset, maybeRows) {
     });
   }
 
-  if (sourceRows.length > 0 && sourceRows.length < MIN_ROWS) {
+  if (!isEmpty && sourceRows.length < MIN_ROWS) {
     errors.push(issue('row-count', `Нужно минимум ${MIN_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   } else if (sourceRows.length > MAX_ROWS) {
     errors.push(issue('row-count', `Можно использовать максимум ${MAX_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
@@ -449,7 +450,7 @@ export function parseText(text, filename = '') {
   const errors = [...(parsed.errors || []), ...validation.errors.filter((candidate) => !(parsed.errors || []).some((existing) => existing.code === candidate.code && existing.row === candidate.row && existing.column === candidate.column))];
   const warnings = [...(parsed.warnings || []), ...validation.warnings];
 
-  if ((parsed.errors || []).some((candidate) => candidate.code === 'invalid-json' || candidate.code === 'csv-parse' || candidate.code === 'empty-file')) {
+  if (errors.some((candidate) => candidate.code === 'invalid-json' || candidate.code === 'invalid-json-shape' || candidate.code === 'csv-parse' || candidate.code === 'empty-file')) {
     return { dataset: null, errors, warnings };
   }
 

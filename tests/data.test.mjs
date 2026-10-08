@@ -57,3 +57,23 @@ test('normalizeDataset pads short rows and preserves headers', () => {
   const result = normalizeDataset({ headers: ['a', 'b'], rows: [['x'], ['y', '2']] });
   assert.deepEqual(result.rows, [{ a: 'x', b: '' }, { a: 'y', b: '2' }]);
 });
+
+test('validateDataset reports mixed dates and row-count bounds', () => {
+  const mixed = validateDataset(['date', 'value'], [
+    { date: '2026-10-01', value: '1' },
+    { date: 'not a date', value: '2' },
+    { date: '2026-10-03', value: '3' },
+    { date: '2026-10-04', value: '4' },
+    { date: '2026-10-05', value: '5' },
+  ]);
+  assert.ok(mixed.errors.some((error) => error.code === 'invalid-date'));
+  assert.equal(mixed.rows[0].date, '2026-10-01');
+  assert.ok(validateDataset(['x'], [{ x: 1 }]).errors.some((error) => error.code === 'row-count'));
+});
+
+test('parseCsv reports inconsistent rows and parseJson reports malformed JSON', () => {
+  const csv = parseCsv('name,value\nA,1\nB,2,extra');
+  assert.ok(csv.errors.some((error) => error.code === 'inconsistent-row'));
+  const json = parseJson('{"items": [');
+  assert.ok(json.errors.some((error) => error.code === 'invalid-json'));
+});
