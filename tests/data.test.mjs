@@ -81,6 +81,8 @@ test('parseCsv reports inconsistent rows and parseJson reports malformed JSON', 
 test('parseNumber accepts mixed thousands separators and parseDate is timezone-stable', async () => {
   const data = await import('../src/data.js');
   assert.equal(data.parseNumber('1.234,56'), 1234.56);
+  assert.equal(data.parseNumber('.5'), 0.5);
+  assert.equal(data.parseNumber(',5'), 0.5);
   assert.equal(data.parseDate('Oct 1, 2026'), '2026-10-01');
 });
 

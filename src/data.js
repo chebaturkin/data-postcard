@@ -111,6 +111,7 @@ function parseCsvRows(text) {
 /** Parse a CSV string, retaining source values as strings. */
 export function parseCsv(text) {
   const source = String(text ?? '').replace(/^\uFEFF/, '');
+  if (!source.trim()) return { headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'Файл пустой.')], warnings: [] };
   const parsed = parseCsvRows(source);
   const matrix = parsed.matrix;
   if (matrix.length === 0 || matrix.every((cells) => cells.every((value) => String(value).trim() === ''))) {
@@ -283,6 +284,7 @@ export function parseNumber(value) {
     fractionPart = unsigned.slice(decimalIndex + 1);
   }
 
+  if (!integerPart) integerPart = '0';
   if (!/^\d+$/.test(integerPart) || (fractionPart && !/^\d+$/.test(fractionPart))) return null;
   const number = Number(`${sign}${integerPart}${fractionPart ? `.${fractionPart}` : ''}`);
   if (!Number.isFinite(number)) return null;
