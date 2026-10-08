@@ -2,61 +2,458 @@ import { parseDate, parseNumber } from './data.js';
 import { THEMES } from './themes.js';
 
 const esc = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
-const short = (value, limit = 18) => { const text = String(value ?? ''); return text.length > limit ? `${text.slice(0, limit - 1)}…` : text; };
+const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
+const safeText = (value, fallback = '') => {
+  const text = String(value ?? '').trim();
+  return text || fallback;
+};
 const number = (value) => parseNumber(value);
-const formatValue = (value, unit = '') => value === null || value === undefined || Number.isNaN(value) ? '—' : `${new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 }).format(value)}${unit ? ` ${unit}` : ''}`;
-const asDate = (value) => { const parsed = parseDate(value); if (!parsed) return null; const date = parsed instanceof Date ? parsed : new Date(`${parsed}T00:00:00Z`); return Number.isNaN(date.valueOf()) ? null : date; };
-const dateLabel = (value) => { const date = asDate(value); return date ? new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short' }).format(date).replace('.', '') : String(value ?? ''); };
+const asDate = (value) => {
+  const parsed = parseDate(value);
+  if (!parsed) return null;
+  const date = parsed instanceof Date ? parsed : new Date(`${parsed}T00:00:00Z`);
+  return Number.isNaN(date.valueOf()) ? null : date;
+};
+const isoDate = (date) => date ? date.toISOString().slice(0, 10) : '';
+const ruNumber = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
+const formatNumber = (value) => value === null || value === undefined || Number.isNaN(value) ? '—' : ruNumber.format(value);
+const formatValue = (value, unit = '') => {
+  if (value === null || value === undefined || Number.isNaN(value)) return '—';
+  return `${formatNumber(value)}${safeText(unit) ? ` ${safeText(unit)}` : ''}`;
+};
+const monthFormatter = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' });
+const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', timeZone: 'UTC' });
+const dateLabel = (date) => date ? dateFormatter.format(date).replace('.', '') : '';
+const monthLabel = (date) => {
+  const value = monthFormatter.format(date).replace('.', '');
+  return value.charAt(0).toUpperCase() + value.slice(1);
+};
+
+const FONT_CSS = `
+  .literata { font-family: 'Literata', Georgia, 'Times New Roman', serif; }
+  .golos { font-family: 'Golos Text', 'Trebuchet MS', Arial, sans-serif; }
+  .mono { font-family: 'Golos Text', 'IBM Plex Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
+`;
+
+function attrs(style = {}) {
+  return Object.entries(style).map(([key, value]) => `${key}="${esc(value)}"`).join(' ');
+}
 
 function text(x, y, content, style = {}) {
-  const attrs = Object.entries(style).map(([key, value]) => `${key}="${esc(value)}"`).join(' ');
-  return `<text x="${x}" y="${y}" ${attrs}>${esc(content)}</text>`;
+  return `<text x="${x}" y="${y}" ${attrs(style)}>${esc(content)}</text>`;
+}
+
+function multilineText(x, y, lines, style = {}, lineHeight = 24) {
+  const safeLines = Array.isArray(lines) && lines.length ? lines : [''];
+  const tspans = safeLines.map((line, index) => `<tspan x="${x}" dy="${index === 0 ? 0 : lineHeight}">${esc(line)}</tspan>`).join('');
+  return `<text x="${x}" y="${y}" ${attrs(style)}>${tspans}</text>`;
+}
+
+function wrapText(value, maxChars, maxLines = 3) {
+  const source = safeText(value);
+  if (!source) return [];
+  const words = source.split(/\s+/).filter(Boolean);
+  const lines = [];
+  let line = '';
+  words.forEach((word) => {
+    // Break unusually long pasted words so they cannot run through the page.
+    const chunks = word.length > maxChars ? word.match(new RegExp(`.{1,${Math.max(4, maxChars - 1)}}`, 'g')) || [word] : [word];
+    chunks.forEach((chunk) => {
+      if (!line) line = chunk;
+      else if ((line.length + 1 + chunk.length) <= maxChars) line += ` ${chunk}`;
+      else { lines.push(line); line = chunk; }
+    });
+  });
+  if (line) lines.push(line);
+  if (lines.length <= maxLines) return lines;
+  const visible = lines.slice(0, maxLines);
+  visible[maxLines - 1] = `${visible[maxLines - 1].replace(/…$/, '').slice(0, Math.max(1, maxChars - 1))}…`;
+  return visible;
+}
+
+function shorten(value, maxChars = 22) {
+  const source = safeText(value, 'Без названия');
+  if (source.length <= maxChars) return source;
+  return `${source.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
 }
 
 function baseDefs(theme) {
   return `<defs>
-    <pattern id="dots" width="18" height="18" patternUnits="userSpaceOnUse"><circle cx="2" cy="2" r="1.2" fill="${theme.accent}" opacity=".28"/></pattern>
-    <pattern id="hatch" width="14" height="14" patternUnits="userSpaceOnUse"><path d="M-3 3L3 -3M0 14L14 0M11 17L17 11" stroke="${theme.accent}" stroke-width="1" opacity=".35"/></pattern>
-    <pattern id="paper-grain" width="72" height="72" patternUnits="userSpaceOnUse"><path d="M0 13H72M0 58H72" stroke="${theme.ink}" stroke-opacity=".045"/><circle cx="18" cy="34" r=".9" fill="${theme.ink}" fill-opacity=".05"/><circle cx="53" cy="4" r=".8" fill="${theme.ink}" fill-opacity=".04"/></pattern>
+    <pattern id="missing-hatch" width="10" height="10" patternUnits="userSpaceOnUse">
+      <path d="M-2 2L2 -2M0 10L10 0M8 12L12 8" stroke="${theme.accent}" stroke-width="1" opacity=".45"/>
+    </pattern>
+    <pattern id="paper-lines" width="36" height="36" patternUnits="userSpaceOnUse">
+      <path d="M0 35.5H36" stroke="${theme.ink}" stroke-width=".6" opacity=".035"/>
+    </pattern>
   </defs>`;
 }
 
-function commonHeader(state, theme, width) {
-  const pad = width === 1080 ? 92 : 90;
-  const titleY = width === 1080 ? 150 : 102; const captionY = titleY + 48; const ruleY = captionY + 34; const unitY = ruleY + 41; return `${text(pad, titleY, state.title, { fill: theme.ink, 'font-size': width === 1080 ? 62 : 66, 'font-family': 'Georgia, serif', 'font-weight': 600, 'letter-spacing': '-1.4' })}
-  ${text(pad + 3, captionY, state.caption, { fill: theme.muted, 'font-size': 19, 'font-family': 'Trebuchet MS, sans-serif' })}
-  <line x1="${pad}" y1="${ruleY}" x2="${width - pad}" y2="${ruleY}" stroke="${theme.line}" stroke-width="1"/>
-  ${text(pad, unitY, String(state.unit || 'наблюдения').toUpperCase(), { fill: theme.accent, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 2 })}`;
+function metricSummary(rows, valueKey, unit) {
+  const values = rows.map((row) => number(row?.[valueKey])).filter((value) => value !== null);
+  if (!values.length) return '';
+  const total = values.reduce((sum, value) => sum + value, 0);
+  const mean = total / values.length;
+  return { count: values.length, total, mean, unit: safeText(unit) };
 }
 
-function renderBars({ rows, categoryKey, valueKey, unit, state, theme, width, height }) {
-  const pad = width === 1080 ? 92 : 90; const top = 260; const bottom = height - (width === 1080 ? 250 : 195);
-  const values = rows.map((row) => number(row[valueKey])); const valid = values.filter((v) => v !== null); const max = Math.max(...valid, 0); const min = Math.min(...valid, 0); const range = Math.max(max - min, 1); const chartHeight = bottom - top; const zeroY = bottom - ((0 - min) / range) * chartHeight; const gap = width === 1080 ? 16 : 18; const barWidth = Math.max(width === 1080 ? 18 : 30, (width - pad * 2 - gap * (rows.length - 1)) / rows.length);
-  const marks = rows.map((row, index) => { const value = number(row[valueKey]); const x = pad + index * (barWidth + gap); const h = value === null ? 18 : Math.max(10, (Math.abs(value) / range) * (chartHeight - 76)); const y = value === null ? bottom - h : (value >= 0 ? zeroY - h : zeroY); const label = short(row[categoryKey] ?? row.date ?? `0${index + 1}`, width === 1080 ? 12 : 14); const fill = value === null ? 'url(#hatch)' : theme.accent; return `<g opacity="${value === null ? '.5' : '1'}"><line x1="${x + barWidth / 2}" y1="${top - 18}" x2="${x + barWidth / 2}" y2="${bottom + 8}" stroke="${theme.line}" stroke-dasharray="2 11"/><rect x="${x}" y="${y}" width="${barWidth}" height="${h}" fill="${fill}"/><circle cx="${x + barWidth / 2}" cy="${y}" r="4" fill="${theme.paper}" stroke="${theme.accent}" stroke-width="2"/>${text(x + barWidth / 2, y - 18, formatValue(value, unit), { fill: theme.ink, 'text-anchor': 'middle', 'font-size': 17, 'font-family': 'Menlo, monospace' })}${text(x + barWidth / 2, bottom + 34, label, { fill: theme.muted, 'text-anchor': 'middle', 'font-size': 12, 'font-family': 'Menlo, monospace', transform: `rotate(-26 ${x + barWidth / 2} ${bottom + 34})` })}</g>`; }).join('');
-  return `${marks}<line x1="${pad}" y1="${zeroY}" x2="${width - pad}" y2="${zeroY}" stroke="${theme.line}" stroke-width="1"/><line x1="${pad}" y1="${bottom + 72}" x2="${width - pad}" y2="${bottom + 72}" stroke="${theme.line}"/>${text(pad, bottom + 105, 'ПОЛОСЫ / ОТНОСИТЕЛЬНАЯ ВЕЛИЧИНА', { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.5 })}`;
+function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
+  const stories = width < 1100;
+  const summary = metricSummary(rows, valueKey, unit);
+  const summaryWidth = stories ? 270 : 250;
+  const titleWidth = width - margin * 2 - summaryWidth - 26;
+  const titleChars = clamp(Math.floor(titleWidth / (stories ? 27 : 30)), 18, 34);
+  const titleLines = wrapText(state.title, titleChars, 2);
+  const titleY = stories ? 154 : 112;
+  const titleSize = stories ? 58 : 58;
+  const titleLineHeight = stories ? 72 : 68;
+  const captionChars = clamp(Math.floor((width - margin * 2) / 19), 38, 78);
+  const captionLines = wrapText(state.caption, captionChars, stories ? 3 : 2);
+  const captionY = titleY + Math.max(1, titleLines.length) * titleLineHeight + 8;
+  const captionLineHeight = 25;
+  const ruleY = captionY + Math.max(1, captionLines.length) * captionLineHeight + 25;
+  const right = width - margin;
+  const summaryX = right - summaryWidth;
+  let output = multilineText(margin, titleY, titleLines.length ? titleLines : ['Без названия'], {
+    class: 'literata', fill: theme.ink, 'font-size': titleSize, 'font-weight': 500, 'letter-spacing': '-1.1',
+  }, titleLineHeight);
+  if (captionLines.length) output += multilineText(margin + 2, captionY, captionLines, {
+    class: 'golos', fill: theme.muted, 'font-size': stories ? 19 : 18, 'font-weight': 400,
+  }, captionLineHeight);
+  if (summary) {
+    output += text(summaryX, titleY - 6, `${summary.count} наблюдений`, {
+      class: 'golos', fill: theme.muted, 'font-size': 13, 'text-anchor': 'start',
+    });
+    output += text(right, titleY + 28, `Σ ${formatValue(summary.total, unit)}`, {
+      class: 'mono', fill: theme.ink, 'font-size': 20, 'font-weight': 600, 'text-anchor': 'end',
+    });
+    output += text(right, titleY + 56, `μ ${formatValue(summary.mean, unit)}`, {
+      class: 'mono', fill: theme.accent, 'font-size': 15, 'text-anchor': 'end',
+    });
+  }
+  output += `<line x1="${margin}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${theme.line}" stroke-width="1"/>`;
+  if (safeText(unit)) output += text(margin, ruleY + 27, `Единица · ${safeText(unit)}`, {
+    class: 'mono', fill: theme.accent, 'font-size': 12, 'letter-spacing': '.6',
+  });
+  return { markup: output, chartTop: ruleY + (safeText(unit) ? 56 : 35) };
 }
 
-function renderDots({ rows, categoryKey, valueKey, unit, theme, width, height }) {
-  const pad = width === 1080 ? 92 : 90; const top = 270; const bottom = height - (width === 1080 ? 245 : 190); const max = Math.max(...rows.map((row) => Math.abs(number(row[valueKey]) ?? 0)), 1); const rowHeight = (bottom - top) / rows.length; const dots = rows.map((row, index) => { const value = number(row[valueKey]); const count = value === null ? 0 : Math.round((Math.abs(value) / max) * 24); const y = top + rowHeight * index + rowHeight / 2; const label = short(row[categoryKey] ?? row.date ?? `0${index + 1}`, 17); const points = Array.from({ length: Math.max(count, value === null ? 0 : 1) }, (_, dotIndex) => { const x = pad + 170 + dotIndex * 25; return `<circle cx="${x}" cy="${y}" r="5" fill="${value === null ? 'url(#hatch)' : theme.accent}"/>`; }).join(''); return `${text(pad, y + 5, label, { fill: theme.muted, 'font-size': 13, 'font-family': 'Menlo, monospace' })}${points}${text(width - pad, y + 5, formatValue(value, unit), { fill: theme.ink, 'text-anchor': 'end', 'font-size': 16, 'font-family': 'Menlo, monospace' })}<line x1="${pad + 170}" y1="${y + 18}" x2="${width - pad}" y2="${y + 18}" stroke="${theme.line}" stroke-dasharray="1 8"/>`; }).join('');
-  return `${dots}${text(pad, top - 32, 'ТОЧКИ / КАЖДАЯ ТОЧКА — ЧАСТЬ ЦЕЛОГО', { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.2 })}`;
+function axisTicks(min, max, count = 4) {
+  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
+  if (Math.abs(max - min) < 1e-9) return [min];
+  return Array.from({ length: count + 1 }, (_, index) => min + ((max - min) * index) / count);
 }
 
-function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, height }) {
-  const pad = width === 1080 ? 92 : 90; const gridTop = 285; const cols = 7; const cell = Math.min(100, (width - pad * 2) / cols); const gridWidth = cell * cols; const cellHeight = width === 1080 ? 112 : 72; const max = Math.max(...rows.map((row) => Math.abs(number(row[valueKey]) ?? 0)), 1); const start = rows.map((row) => asDate(row[dateKey])).filter(Boolean).sort((a, b) => a - b)[0] || new Date(); const first = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1)); const offset = (first.getUTCDay() + 6) % 7; const cells = Array.from({ length: 42 }, (_, index) => { const date = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), 1 + index - offset)); const match = rows.find((row) => { const d = asDate(row[dateKey]); return d && d.toISOString().slice(0, 10) === date.toISOString().slice(0, 10); }); const value = match ? number(match[valueKey]) : null; const x = pad + (index % cols) * cell; const y = gridTop + Math.floor(index / cols) * cellHeight; const ratio = value === null ? 0 : Math.min(1, Math.max(.08, Math.abs(value) / max)); return `<rect x="${x}" y="${y}" width="${cell - 5}" height="${cellHeight - 5}" fill="${value === null ? 'url(#hatch)' : theme.accent}" opacity="${value === null ? '.16' : .2 + ratio * .8}"/>${text(x + 8, y + 22, date.getUTCDate(), { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace' })}${match ? text(x + 8, y + cellHeight - 18, formatValue(value, unit), { fill: theme.ink, 'font-size': 14, 'font-family': 'Menlo, monospace' }) : ''}`; }).join('');
-  const weekdays = ['ПН', 'ВТ', 'СР', 'ЧТ', 'ПТ', 'СБ', 'ВС'].map((day, index) => text(pad + index * cell + 8, gridTop - 18, day, { fill: theme.accent, 'font-size': 11, 'font-family': 'Menlo, monospace', 'letter-spacing': 1 } )).join('');
-  return `${weekdays}${cells}${text(pad, gridTop + cellHeight * 6 + 32, 'КАЛЕНДАРНАЯ СЕТКА / ДЕНЬ ЗА ДНЁМ', { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.2 })}`;
+function renderAxis({ min, max, x1, x2, y, theme, fontSize = 10 }) {
+  const ticks = axisTicks(min, max, 4);
+  const span = max - min || 1;
+  let output = '';
+  ticks.forEach((tick, index) => {
+    const x = x1 + ((tick - min) / span) * (x2 - x1);
+    output += `<line x1="${x}" y1="${y + 9}" x2="${x}" y2="${y + 19}" stroke="${theme.line}" stroke-width="1"/>`;
+    output += text(x, y, formatNumber(tick), {
+      class: 'mono', fill: theme.muted, 'font-size': fontSize, 'text-anchor': index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle',
+    });
+  });
+  return output;
 }
 
-function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, height }) {
-  const pad = width === 1080 ? 92 : 90; const left = pad + 30; const right = width - pad - 30; const top = 300; const bottom = height - (width === 1080 ? 270 : 220); const points = rows.map((row) => ({ date: asDate(row[dateKey]), value: number(row[valueKey]), row })).filter((item) => item.date); points.sort((a, b) => a.date - b.date); const values = points.map((point) => point.value).filter((value) => value !== null); const min = Math.min(...values, 0); const max = Math.max(...values, 1); const range = Math.max(max - min, 1); const path = points.map((point, index) => { const x = left + (points.length === 1 ? 0 : index / (points.length - 1)) * (right - left); const y = bottom - ((point.value ?? min) - min) / range * (bottom - top); return `${index ? 'L' : 'M'} ${x} ${y}`; }).join(' '); const marks = points.map((point, index) => { const x = left + (points.length === 1 ? 0 : index / (points.length - 1)) * (right - left); const y = bottom - ((point.value ?? min) - min) / range * (bottom - top); return `<line x1="${x}" y1="${bottom + 12}" x2="${x}" y2="${bottom + 20}" stroke="${theme.line}"/>${text(x, bottom + 42, dateLabel(point.date), { fill: theme.muted, 'text-anchor': 'middle', 'font-size': 11, 'font-family': 'Menlo, monospace' })}<circle cx="${x}" cy="${y}" r="7" fill="${theme.paper}" stroke="${theme.accent}" stroke-width="3"/>${text(x, y - 18, formatValue(point.value, unit), { fill: theme.ink, 'text-anchor': 'middle', 'font-size': 15, 'font-family': 'Menlo, monospace' })}`; }).join(''); return `<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="${theme.line}"/>${path ? `<path d="${path}" fill="none" stroke="${theme.accent}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>` : ''}${marks}${text(pad, top - 32, 'ВРЕМЕННОЙ МАРШРУТ / ДВИЖЕНИЕ ВО ВРЕМЕНИ', { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.2 })}`;
+function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, state }) {
+  const values = rows.map((row) => number(row?.[valueKey]));
+  const valid = values.filter((value) => value !== null);
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Выберите числовую колонку или добавьте значения.' });
+  const min = Math.min(...valid, 0);
+  const max = Math.max(...valid, 0);
+  const span = Math.max(max - min, 1);
+  const labelWidth = width < 1100 ? 230 : 215;
+  const valueWidth = width < 1100 ? 130 : 118;
+  const plotLeft = margin + labelWidth;
+  const plotRight = width - margin - valueWidth;
+  const top = chartTop + 34;
+  const bottom = Math.max(top + 20, chartBottom - 10);
+  const rowHeight = (bottom - top) / Math.max(rows.length, 1);
+  const barHeight = clamp(rowHeight * 0.48, width < 1100 ? 9 : 8, width < 1100 ? 36 : 26);
+  const zeroX = plotLeft + ((0 - min) / span) * (plotRight - plotLeft);
+  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: width < 1100 ? 11 : 10 });
+  output += `<line x1="${zeroX}" y1="${top - 5}" x2="${zeroX}" y2="${bottom + 5}" stroke="${theme.ink}" stroke-width="1.2"/>`;
+  rows.forEach((row, index) => {
+    const value = values[index];
+    const y = top + index * rowHeight + (rowHeight - barHeight) / 2;
+    const centerY = y + barHeight / 2;
+    const category = shorten(row?.[categoryKey] ?? row?.date ?? `Строка ${index + 1}`, width < 1100 ? 30 : 26);
+    output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" opacity=".65"/>`;
+    output += text(margin, centerY + clamp(rowHeight * .26, 5, 8), category, {
+      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .54, 10, 15),
+    });
+    if (value === null) {
+      const missingWidth = clamp(rowHeight * .7, 16, 28);
+      output += `<rect x="${zeroX - missingWidth / 2}" y="${y}" width="${missingWidth}" height="${barHeight}" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width="1"/>`;
+      output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), '—', {
+        class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end',
+      });
+      return;
+    }
+    const barWidth = (Math.abs(value) / span) * (plotRight - plotLeft);
+    const x = value < 0 ? zeroX - barWidth : zeroX;
+    output += `<rect x="${x}" y="${y}" width="${Math.max(barWidth, value === 0 ? 1.5 : 0)}" height="${barHeight}" fill="${theme.accent}"/>`;
+    output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), formatValue(value, unit), {
+      class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end',
+    });
+  });
+  return output;
 }
 
-export function buildScene({ rows = [], state, dataset, themeName = 'night' }) {
-  const theme = THEMES[themeName] || THEMES.night; const stories = state.size === 'stories'; const width = stories ? 1080 : 1200; const height = stories ? 1920 : 900; const mode = state.mode || 'bars'; const categoryKey = state.categoryKey || dataset?.columns?.find((column) => column.type === 'category')?.key || dataset?.headers?.[0]; const valueKey = state.valueKey || dataset?.columns?.find((column) => column.type === 'number')?.key || dataset?.headers?.[1]; const dateKey = state.dateKey || dataset?.columns?.find((column) => column.type === 'date')?.key || '';
-  const payload = { rows, categoryKey, valueKey, dateKey, unit: state.unit, state, theme, width, height };
-  let chart = mode === 'dots' ? renderDots(payload) : mode === 'calendar' && dateKey ? renderCalendar(payload) : mode === 'timeline' && dateKey ? renderTimeline(payload) : renderBars(payload);
-  if (stories) chart = `<g transform="translate(0, 210)">${chart}</g>`;
-  const footerY = height - 70;
-  const body = `${baseDefs(theme)}<rect width="${width}" height="${height}" fill="${theme.paper}"/><rect width="${width}" height="${height}" fill="url(#paper-grain)"/>${commonHeader(state, theme, width)}${chart}<line x1="${width === 1080 ? 92 : 90}" y1="${footerY - 20}" x2="${width - (width === 1080 ? 92 : 90)}" y2="${footerY - 20}" stroke="${theme.line}"/>${text(width === 1080 ? 92 : 90, footerY + 10, `LOCAL NOTE · ${state.sourceLabel || 'DATA POSTCARD'}`, { fill: theme.muted, 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.2 })}${text(width - (width === 1080 ? 92 : 90), footerY + 10, `DATA POSTCARD / ${String(rows.length).padStart(2, '0')}`, { fill: theme.accent, 'text-anchor': 'end', 'font-size': 12, 'font-family': 'Menlo, monospace', 'letter-spacing': 1.2 })}`;
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="scene-title scene-desc"><title id="scene-title">${esc(state.title)}</title><desc id="scene-desc">${esc(state.caption)}</desc>${body}</svg>`;
+function renderDots({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
+  const values = rows.map((row) => number(row?.[valueKey]));
+  const valid = values.filter((value) => value !== null);
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Выберите числовую колонку или добавьте значения.' });
+  const min = Math.min(...valid, 0);
+  const max = Math.max(...valid, 0);
+  const span = Math.max(max - min, 1);
+  const labelWidth = width < 1100 ? 230 : 215;
+  const valueWidth = width < 1100 ? 130 : 118;
+  const plotLeft = margin + labelWidth;
+  const plotRight = width - margin - valueWidth;
+  const top = chartTop + 38;
+  const bottom = Math.max(top + 20, chartBottom - 10);
+  const rowHeight = (bottom - top) / Math.max(rows.length, 1);
+  const radius = clamp(rowHeight * .17, 4, width < 1100 ? 9 : 7);
+  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: width < 1100 ? 11 : 10 });
+  rows.forEach((row, index) => {
+    const value = values[index];
+    const centerY = top + index * rowHeight + rowHeight / 2;
+    const category = shorten(row?.[categoryKey] ?? row?.date ?? `Строка ${index + 1}`, width < 1100 ? 30 : 26);
+    output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="1 8"/>`;
+    output += text(margin, centerY + clamp(rowHeight * .22, 5, 8), category, {
+      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15),
+    });
+    if (value === null) {
+      output += `<line x1="${plotLeft - 5}" y1="${centerY - radius}" x2="${plotLeft + 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/><line x1="${plotLeft + 5}" y1="${centerY - radius}" x2="${plotLeft - 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/>`;
+      output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), '—', { class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end' });
+      return;
+    }
+    const x = plotLeft + ((value - min) / span) * (plotRight - plotLeft);
+    output += `<circle cx="${x}" cy="${centerY}" r="${radius}" fill="${theme.accent}" stroke="${theme.paper}" stroke-width="2"/>`;
+    output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), formatValue(value, unit), { class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end' });
+  });
+  return output;
+}
+
+function calendarEntries(rows, dateKey, valueKey) {
+  const groups = new Map();
+  const undated = [];
+  rows.forEach((row, index) => {
+    const date = asDate(row?.[dateKey]);
+    if (!date) { undated.push({ row, index }); return; }
+    const iso = isoDate(date);
+    const month = iso.slice(0, 7);
+    if (!groups.has(month)) groups.set(month, { date: new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)), cells: new Map() });
+    if (!groups.get(month).cells.has(iso)) groups.get(month).cells.set(iso, []);
+    groups.get(month).cells.get(iso).push({ row, index, value: number(row?.[valueKey]), raw: row?.[valueKey] });
+  });
+  return { groups: [...groups.values()].sort((a, b) => a.date - b.date), undated };
+}
+
+function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, categoryKey }) {
+  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нужна колонка с датой', detail: 'Выберите колонку с датой для календарной сетки.' });
+  const { groups, undated } = calendarEntries(rows, dateKey, valueKey);
+  if (!groups.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет корректных дат', detail: 'Проверьте формат дат в выбранной колонке.' });
+  const stories = width < 1100;
+  const cols = Math.min(stories ? 3 : 5, groups.length);
+  const gap = stories ? 18 : 12;
+  const totalWidth = width - margin * 2;
+  const blockWidth = (totalWidth - gap * (cols - 1)) / cols;
+  const rowsOfBlocks = Math.ceil(groups.length / cols);
+  const maxWeeks = Math.max(...groups.map((group) => {
+    const first = group.date;
+    const offset = (first.getUTCDay() + 6) % 7;
+    return Math.ceil((offset + new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate()) / 7);
+  }));
+  const availableHeight = Math.max(110, chartBottom - chartTop - rowsOfBlocks * 35 - (rowsOfBlocks - 1) * gap);
+  const cellHeight = clamp(availableHeight / (rowsOfBlocks * maxWeeks), stories ? 18 : 14, stories ? 48 : 30);
+  const cellWidth = (blockWidth - 8) / 7;
+  const blockHeight = 33 + maxWeeks * cellHeight;
+  const weekdays = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+  const maxCalendarValue = Math.max(...rows.map((row) => Math.abs(number(row?.[valueKey]) ?? 0)), 1);
+  let output = '';
+  groups.forEach((group, groupIndex) => {
+    const col = groupIndex % cols;
+    const rowIndex = Math.floor(groupIndex / cols);
+    const x0 = margin + col * (blockWidth + gap);
+    const y0 = chartTop + rowIndex * (blockHeight + gap);
+    const first = group.date;
+    const offset = (first.getUTCDay() + 6) % 7;
+    const daysInMonth = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
+    output += text(x0, y0 + 15, monthLabel(first), { class: 'literata', fill: theme.ink, 'font-size': stories ? 18 : 15, 'font-weight': 600 });
+    weekdays.forEach((weekday, weekdayIndex) => {
+      output += text(x0 + weekdayIndex * cellWidth + 2, y0 + 29, weekday, { class: 'mono', fill: theme.accent, 'font-size': stories ? 9 : 8 });
+    });
+    for (let day = 1; day <= daysInMonth; day += 1) {
+      const dayIndex = offset + day - 1;
+      const cellX = x0 + (dayIndex % 7) * cellWidth;
+      const cellY = y0 + 35 + Math.floor(dayIndex / 7) * cellHeight;
+      const date = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), day));
+      const iso = isoDate(date);
+      const entries = group.cells.get(iso) || [];
+      const numericEntries = entries.filter((entry) => entry.value !== null);
+      const hasMissing = entries.some((entry) => entry.value === null);
+      output += `<rect x="${cellX}" y="${cellY}" width="${Math.max(2, cellWidth - 3)}" height="${Math.max(2, cellHeight - 3)}" fill="${theme.paper}" stroke="${theme.line}" stroke-width=".8"/>`;
+      output += text(cellX + 3, cellY + clamp(cellHeight * .34, 8, 13), day, { class: 'mono', fill: theme.muted, 'font-size': stories ? 10 : 9 });
+      if (!entries.length) continue;
+      const titleValues = entries.map((entry) => entry.value === null ? '—' : formatValue(entry.value, unit)).join(', ');
+      const aggregate = numericEntries.reduce((sum, entry) => sum + entry.value, 0);
+      const ratio = Math.min(1, Math.abs(aggregate) / maxCalendarValue);
+      const innerWidth = Math.max(1, (cellWidth - 8) * (numericEntries.length ? Math.max(.08, ratio) : .08));
+      output += `<title>${esc(`${iso}: ${titleValues}`)}</title>`;
+      if (numericEntries.length) {
+        output += `<rect x="${cellX + 3}" y="${cellY + cellHeight - 8}" width="${innerWidth}" height="3" fill="${theme.accent}"/>`;
+        const valueLabel = entries.length > 1
+          ? `${entries.length}× · ${formatNumber(aggregate)}${numericEntries.length < entries.length ? ' · —' : ''}`
+          : formatNumber(numericEntries[0].value);
+        output += text(cellX + 3, cellY + cellHeight - 12, shorten(valueLabel, stories ? 12 : 10), { class: 'mono', fill: theme.ink, 'font-size': stories ? 9 : 8 });
+      } else {
+        output += `<rect x="${cellX + 2}" y="${cellY + cellHeight - 7}" width="${Math.max(1, cellWidth - 7)}" height="3" fill="url(#missing-hatch)"/>`;
+        const textValues = entries.map((entry) => entry.raw === null || entry.raw === undefined || String(entry.raw).trim() === '' ? '—' : String(entry.raw).trim()).join(' / ');
+        const textLabel = hasMissing && !textValues.replace(/([ —/])/g, '') ? '—' : (entries.length > 1 ? `${entries.length}× · ${textValues}` : textValues);
+        output += text(cellX + 3, cellY + cellHeight - 12, shorten(textLabel, stories ? 12 : 10), { class: 'mono', fill: theme.muted, 'font-size': stories ? 9 : 8 });
+      }
+      if (entries.length > 1 && numericEntries.length) output += text(cellX + cellWidth - 5, cellY + clamp(cellHeight * .34, 8, 13), `${entries.length}×`, { class: 'mono', fill: theme.accentAlt || theme.accent, 'font-size': stories ? 8 : 7, 'text-anchor': 'end' });
+    }
+  });
+  const lastRowY = chartTop + rowsOfBlocks * (blockHeight + gap) - gap;
+  if (undated.length) {
+    const undatedText = undated.slice(0, 3).map(({ row, index }) => `${shorten(row?.[categoryKey] ?? `строка ${index + 1}`, stories ? 15 : 18)} · ${formatValue(number(row?.[valueKey]), unit)}`).join('  |  ');
+    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `Без корректной даты · ${undated.length} строк`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
+    output += text(margin, Math.min(chartBottom + 4, lastRowY + 46), undatedText, { class: 'mono', fill: theme.muted, 'font-size': 10 });
+  }
+  return output;
+}
+
+function timelinePoints(rows, dateKey, valueKey) {
+  const points = [];
+  rows.forEach((row, index) => {
+    const date = asDate(row?.[dateKey]);
+    if (date) points.push({ date, iso: isoDate(date), value: number(row?.[valueKey]), row, index });
+  });
+  points.sort((a, b) => a.date - b.date || a.index - b.index);
+  const counts = new Map();
+  points.forEach((point) => counts.set(point.iso, (counts.get(point.iso) || 0) + 1));
+  const seen = new Map();
+  points.forEach((point) => { const n = counts.get(point.iso); point.duplicate = n > 1; point.ordinal = seen.get(point.iso) || 0; seen.set(point.iso, point.ordinal + 1); });
+  return points;
+}
+
+function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
+  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нужна колонка с датой', detail: 'Выберите колонку с датой для временного маршрута.' });
+  const points = timelinePoints(rows, dateKey, valueKey);
+  if (!points.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет корректных дат', detail: 'Проверьте формат дат в выбранной колонке.' });
+  const valid = points.map((point) => point.value).filter((value) => value !== null);
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Добавьте значения для выбранной колонки.' });
+  const min = Math.min(...valid, 0);
+  const max = Math.max(...valid, 0);
+  const span = Math.max(max - min, 1);
+  const left = margin + 14;
+  const right = width - margin - 14;
+  const top = chartTop + 32;
+  const bottom = Math.max(top + 50, chartBottom - 46);
+  const dateMin = points[0].date.valueOf();
+  const dateMax = points[points.length - 1].date.valueOf();
+  const dateSpan = Math.max(dateMax - dateMin, 1);
+  const yFor = (value) => bottom - ((value - min) / span) * (bottom - top);
+  const xFor = (point) => {
+    const base = dateMax === dateMin ? (left + right) / 2 : left + ((point.date.valueOf() - dateMin) / dateSpan) * (right - left);
+    if (!point.duplicate) return base;
+    const total = points.filter((candidate) => candidate.iso === point.iso).length;
+    return base + (point.ordinal - (total - 1) / 2) * clamp((right - left) / Math.max(points.length, 10) * .32, 5, 13);
+  };
+  let output = '';
+  axisTicks(min, max, 4).forEach((tick) => {
+    const y = yFor(tick);
+    output += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="2 8"/>`;
+    output += text(margin, y + 4, formatNumber(tick), { class: 'mono', fill: theme.muted, 'font-size': width < 1100 ? 11 : 10 });
+  });
+  output += `<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="${theme.ink}" stroke-width="1.2"/>`;
+  let segment = [];
+  const segments = [];
+  points.forEach((point) => {
+    if (point.value === null) { if (segment.length) segments.push(segment); segment = []; return; }
+    segment.push(point);
+  });
+  if (segment.length) segments.push(segment);
+  segments.forEach((items) => {
+    const d = items.map((point, index) => `${index ? 'L' : 'M'} ${xFor(point)} ${yFor(point.value)}`).join(' ');
+    output += `<path d="${d}" fill="none" stroke="${theme.accent}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
+  });
+  const labelStep = points.length > 12 ? 2 : 1;
+  points.forEach((point, index) => {
+    const x = xFor(point);
+    const y = point.value === null ? bottom : yFor(point.value);
+    if (point.value === null) {
+      output += `<line x1="${x - 5}" y1="${bottom - 7}" x2="${x + 5}" y2="${bottom + 3}" stroke="${theme.accentAlt || theme.accent}" stroke-width="2"/>`;
+    } else {
+      output += `<circle cx="${x}" cy="${y}" r="${width < 1100 ? 6 : 5}" fill="${theme.paper}" stroke="${theme.accent}" stroke-width="2.5"/>`;
+      const labelY = y < top + 30 ? y + 22 : y - 14;
+      output += text(x, labelY, formatValue(point.value, unit), { class: 'mono', fill: theme.ink, 'font-size': width < 1100 ? 11 : 10, 'text-anchor': 'middle' });
+    }
+    if (index % labelStep === 0 || index === points.length - 1) {
+      output += `<line x1="${x}" y1="${bottom + 4}" x2="${x}" y2="${bottom + 12}" stroke="${theme.line}" stroke-width="1"/>`;
+      output += text(x, bottom + 31, dateLabel(point.date), { class: 'mono', fill: theme.muted, 'font-size': width < 1100 ? 10 : 9, 'text-anchor': 'middle' });
+    }
+  });
+  return output;
+}
+
+function renderMessage({ theme, width, chartTop, chartBottom, title, detail }) {
+  const centerX = width / 2;
+  const centerY = chartTop + Math.max(80, (chartBottom - chartTop) * .45);
+  return `<g>
+    <line x1="${width / 2 - 110}" y1="${centerY - 40}" x2="${width / 2 + 110}" y2="${centerY - 40}" stroke="${theme.line}"/>
+    ${text(centerX, centerY + 4, title, { class: 'literata', fill: theme.ink, 'font-size': width < 1100 ? 28 : 27, 'text-anchor': 'middle' })}
+    ${text(centerX, centerY + 34, detail, { class: 'golos', fill: theme.muted, 'font-size': width < 1100 ? 15 : 14, 'text-anchor': 'middle' })}
+  </g>`;
+}
+
+function renderFooter({ width, height, margin, theme, rows, valueKey, unit, mode }) {
+  const y = height - (width < 1100 ? 92 : 58);
+  const missing = rows.some((row) => {
+    const raw = row?.[valueKey];
+    if (raw === null || raw === undefined || String(raw).trim() === '') return true;
+    return mode !== 'calendar' && number(raw) === null;
+  });
+  let output = `<line x1="${margin}" y1="${y - 20}" x2="${width - margin}" y2="${y - 20}" stroke="${theme.line}" stroke-width="1"/>`;
+  if (missing) {
+    output += `<rect x="${margin}" y="${y - 8}" width="18" height="10" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width=".8"/>`;
+    output += text(margin + 28, y + 1, 'нет значения', { class: 'golos', fill: theme.muted, 'font-size': 12 });
+  }
+  if (safeText(unit)) output += text(width - margin, y + 1, safeText(unit), { class: 'mono', fill: theme.muted, 'font-size': 12, 'text-anchor': 'end' });
+  return output;
+}
+
+export function buildScene({ rows = [], state = {}, dataset = {}, themeName = 'paper' } = {}) {
+  state = state || {};
+  const theme = THEMES[themeName] || THEMES.paper;
+  const stories = state.size === 'stories';
+  const width = stories ? 1080 : 1200;
+  const height = stories ? 1920 : 900;
+  const margin = stories ? 88 : 90;
+  const mode = state.mode || 'bars';
+  const columns = Array.isArray(dataset?.columns) ? dataset.columns : [];
+  const headers = Array.isArray(dataset?.headers) ? dataset.headers : [];
+  const categoryKey = state.categoryKey || columns.find((column) => column.type === 'category')?.key || headers[0] || '';
+  const valueKey = state.valueKey || columns.find((column) => column.type === 'number')?.key || headers[1] || '';
+  const dateKey = state.dateKey || columns.find((column) => column.type === 'date')?.key || '';
+  const unit = safeText(state.unit);
+  const safeRows = Array.isArray(rows) ? rows.slice(0, 20) : [];
+  const header = renderHeader({ state, theme, width, margin, rows: safeRows, valueKey, unit });
+  const chartBottom = height - (stories ? 138 : 104);
+  const payload = { rows: safeRows, categoryKey, valueKey, dateKey, unit, theme, width, chartTop: header.chartTop, chartBottom, margin, state };
+  let chart;
+  if (!safeRows.length) chart = renderMessage({ theme, width, chartTop: header.chartTop, chartBottom, title: 'Нет строк для отображения', detail: 'Добавьте строки данных, чтобы собрать открытку.' });
+  else if (mode === 'calendar') chart = renderCalendar(payload);
+  else if (mode === 'timeline') chart = renderTimeline(payload);
+  else if (mode === 'dots') chart = renderDots(payload);
+  else chart = renderBars(payload);
+  const body = `${baseDefs(theme)}<style>${FONT_CSS}</style><rect width="${width}" height="${height}" fill="${theme.paper}"/><rect width="${width}" height="${height}" fill="url(#paper-lines)"/>${header.markup}<g aria-label="${esc(mode)}">${chart}</g>${renderFooter({ width, height, margin, theme, rows: safeRows, valueKey, unit, mode })}`;
+  const title = safeText(state.title, 'Новая заметка');
+  const caption = safeText(state.caption, 'Маленькая история из ваших строк.');
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="scene-title scene-desc"><title id="scene-title">${esc(title)}</title><desc id="scene-desc">${esc(caption)}</desc>${body}</svg>`;
 }

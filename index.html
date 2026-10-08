@@ -1,9 +1,9 @@
 <!doctype html>
-<html lang="ru" data-theme="night" data-size="landscape">
+<html lang="ru" data-theme="paper" data-size="landscape">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#101820" />
+    <meta name="theme-color" content="#f2eee5" />
     <meta name="description" content="Data Postcard — локальная визуальная открытка из небольшого CSV или JSON." />
     <title>Data Postcard — field notes in numbers</title>
     <link rel="stylesheet" href="styles.css" />
@@ -13,23 +13,23 @@
 
     <header class="masthead" aria-labelledby="site-title">
       <div class="masthead__brand">
-        <p class="eyebrow">Field notes / 01</p>
+        <p class="eyebrow">local / data / 01</p>
         <h1 id="site-title">Data Postcard</h1>
       </div>
-      <p class="masthead__note">маленький визуальный артефакт<br />из ваших данных</p>
+      <p class="masthead__note">маленькая печатная вещь<br />из ваших строк</p>
     </header>
 
     <main class="app-shell">
       <section class="stage-column" aria-label="Предпросмотр открытки">
         <div class="stage-heading">
-          <p class="eyebrow">Ваше поле</p>
+          <p class="eyebrow">открытка</p>
           <p class="stage-heading__status" id="render-status" aria-live="polite">Пример готов</p>
         </div>
 
         <section class="postcard-stage" id="postcard-stage" aria-label="Открытка 1200 на 900">
-          <div class="postcard-paper" id="postcard-paper" data-theme="night">
+          <div class="postcard-paper" id="postcard-paper" data-theme="paper">
             <div class="postcard-paper__header">
-              <p class="postcard-paper__kicker" id="postcard-kicker">Атлас внимания · 07 наблюдений</p>
+              <p class="postcard-paper__kicker" id="postcard-kicker">Неделя чтения · 07 строк</p>
               <p class="postcard-paper__date" id="postcard-date">08 / 10 / 2026</p>
             </div>
             <svg
@@ -56,7 +56,7 @@
       <aside class="settings-rail" aria-label="Настройки открытки">
         <section class="rail-section rail-section--input" aria-labelledby="input-heading">
           <div class="section-heading">
-            <h2 id="input-heading">Новый материал</h2>
+            <h2 id="input-heading">Данные</h2>
             <span class="section-index">01</span>
           </div>
 
@@ -69,37 +69,37 @@
           >
             <input id="file-input" class="visually-hidden" type="file" accept=".csv,.json,text/csv,application/json" />
             <span class="drop-zone__icon" aria-hidden="true">↘</span>
-            <span class="drop-zone__title">Перетащите CSV или JSON</span>
-            <span class="drop-zone__hint" id="drop-help">или выберите файл с устройства</span>
+            <span class="drop-zone__title">Перетащите файл сюда</span>
+            <span class="drop-zone__hint" id="drop-help">CSV или JSON, до 20 строк</span>
           </div>
-          <button class="text-button" id="import-button" type="button">Выбрать файл</button>
+          <button class="text-button" id="import-button" type="button">выбрать файл →</button>
 
           <label class="field-label" for="paste-input">
             <span>Или вставьте строки</span>
             <span class="field-label__hint">5–20 строк</span>
           </label>
           <textarea id="paste-input" class="paste-input" rows="4" placeholder="день,минуты&#10;понедельник,32&#10;вторник,48"></textarea>
-          <button class="outline-button" id="paste-button" type="button">Взять эти строки</button>
+          <button class="outline-button" id="paste-button" type="button">собрать открытку →</button>
           <p class="input-error" id="data-errors" role="alert" hidden></p>
           <p class="input-summary" id="data-summary" aria-live="polite">Пример: 7 строк · 2 колонки</p>
         </section>
 
         <section class="rail-section" aria-labelledby="edit-heading">
           <div class="section-heading">
-            <h2 id="edit-heading">Подпись</h2>
+            <h2 id="edit-heading">Текст</h2>
             <span class="section-index">02</span>
           </div>
           <label class="field-label" for="title-input">Заголовок</label>
-          <input class="text-input text-input--title" id="title-input" type="text" value="Тихие страницы" autocomplete="off" />
+          <input class="text-input text-input--title" id="title-input" type="text" value="Неделя чтения" autocomplete="off" />
           <label class="field-label" for="caption-input">Короткая заметка</label>
-          <textarea class="text-input text-input--area" id="caption-input" rows="2">Сколько минут осталось между делами этой недели.</textarea>
+          <textarea class="text-input text-input--area" id="caption-input" rows="2">Семь дней, когда у меня нашлось время для книги.</textarea>
           <label class="field-label" for="unit-input">Единицы</label>
           <input class="text-input" id="unit-input" type="text" value="минуты" autocomplete="off" />
         </section>
 
         <section class="rail-section" aria-labelledby="view-heading">
           <div class="section-heading">
-            <h2 id="view-heading">Вид</h2>
+            <h2 id="view-heading">Представление</h2>
             <span class="section-index">03</span>
           </div>
           <div class="control-grid">
@@ -140,7 +140,7 @@
 
         <section class="rail-section" aria-labelledby="tone-heading">
           <div class="section-heading">
-            <h2 id="tone-heading">Тон и размер</h2>
+            <h2 id="tone-heading">Палитра и формат</h2>
             <span class="section-index">04</span>
           </div>
           <div class="control-grid">
@@ -162,7 +162,7 @@
 
         <section class="rail-section rail-section--samples" aria-labelledby="sample-heading">
           <div class="section-heading">
-            <h2 id="sample-heading">Пробные записи</h2>
+            <h2 id="sample-heading">Примеры</h2>
             <span class="section-index">05</span>
           </div>
           <div class="sample-list" role="list" aria-label="Встроенные наборы данных">
@@ -174,7 +174,7 @@
 
         <section class="rail-section rail-section--export" aria-labelledby="export-heading">
           <div class="section-heading">
-            <h2 id="export-heading">Забрать с собой</h2>
+            <h2 id="export-heading">Сохранить</h2>
             <span class="section-index">06</span>
           </div>
           <div class="export-list">
@@ -188,8 +188,8 @@
     </main>
 
     <footer class="site-footer">
-      <p>Data Postcard <span aria-hidden="true">·</span> локальный инструмент для маленьких историй</p>
-      <p>без загрузки данных <span aria-hidden="true">·</span> без регистрации</p>
+      <p>Data Postcard <span aria-hidden="true">·</span> локальная открытка для маленьких данных</p>
+      <p>файл не покидает браузер <span aria-hidden="true">·</span> без аккаунта</p>
     </footer>
 
     <script type="module" src="src/app.js"></script>

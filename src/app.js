@@ -3,14 +3,14 @@ import { buildScene } from './scene.js';
 import { exportSvg, exportPng, exportStandaloneHtml } from './export.js';
 
 const SAMPLES = {
-  reading: { label: 'sample reading', title: 'Тихие страницы', caption: 'Сколько минут осталось между делами этой недели.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
+  reading: { label: 'sample reading', title: 'Неделя чтения', caption: 'Семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
   weather: { label: 'sample weather', title: 'Окно на север', caption: 'Температура и свет в конце длинной недели.', unit: '°C', headers: ['дата', 'температура'], rows: [['2026-10-02', 11], ['2026-10-03', 13], ['2026-10-04', 8], ['2026-10-05', 7], ['2026-10-06', 10], ['2026-10-07', 12], ['2026-10-08', 9]] },
   sport: { label: 'sample sport', title: 'Дворовая дистанция', caption: 'Круги после работы, пока площадка не опустела.', unit: 'круги', headers: ['дата', 'круги'], rows: [['2026-09-28', 4], ['2026-09-29', 6], ['2026-09-30', 5], ['2026-10-01', 8], ['2026-10-02', 7], ['2026-10-03', 10], ['2026-10-04', 9]] },
 };
 
 const $ = (id) => document.getElementById(id);
 const esc = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
-const state = { title: '', caption: '', unit: '', mode: 'bars', order: 'input', theme: 'night', size: 'landscape', showMissing: true, categoryKey: '', valueKey: '', dateKey: '', sourceLabel: '', dataset: null, sample: 'reading', svg: '' };
+const state = { title: '', caption: '', unit: '', mode: 'bars', order: 'input', theme: 'paper', size: 'landscape', showMissing: true, categoryKey: '', valueKey: '', dateKey: '', sourceLabel: '', dataset: null, sample: 'reading', svg: '' };
 
 function rowsForRender() {
   if (!state.dataset) return [];
@@ -38,9 +38,12 @@ function refreshColumns() {
   if (!state.categoryKey || !state.dataset.headers.includes(state.categoryKey)) state.categoryKey = category;
   if (!state.valueKey || !state.dataset.headers.includes(state.valueKey)) state.valueKey = value;
   if (!state.dateKey || !state.dataset.headers.includes(state.dateKey)) state.dateKey = date;
-  setSelectOptions('category-select', state.dataset.headers.map((key) => ({ value: key, label: key })), state.categoryKey);
-  setSelectOptions('value-select', state.dataset.headers.map((key) => ({ value: key, label: key })), state.valueKey);
-  setSelectOptions('date-select', [{ value: '', label: 'не используется' }, ...state.dataset.headers.map((key) => ({ value: key, label: key }))], state.dateKey);
+  const categoryOptions = columns.filter((column) => column.type === 'category' || column.type === 'date').map((column) => ({ value: column.key, label: column.key }));
+  const valueOptions = columns.filter((column) => column.type === 'number').map((column) => ({ value: column.key, label: column.key }));
+  const dateOptions = columns.filter((column) => column.type === 'date').map((column) => ({ value: column.key, label: column.key }));
+  setSelectOptions('category-select', categoryOptions.length ? categoryOptions : state.dataset.headers.map((key) => ({ value: key, label: key })), state.categoryKey);
+  setSelectOptions('value-select', valueOptions.length ? valueOptions : state.dataset.headers.map((key) => ({ value: key, label: key })), state.valueKey);
+  setSelectOptions('date-select', [{ value: '', label: 'не используется' }, ...dateOptions], state.dateKey);
 }
 
 function showErrors(errors = [], warnings = []) {
@@ -71,7 +74,10 @@ function updateChrome() {
   $('postcard-stage').setAttribute('aria-label', state.size === 'stories' ? 'Открытка 1080 на 1920' : 'Открытка 1200 на 900');
   $('stage-size').textContent = state.size === 'stories' ? '1080 × 1920 · stories' : '1200 × 900 · landscape';
   $('stage-mode-note').innerHTML = `<span class="key-line" aria-hidden="true"></span> ${({ bars: 'полосы показывают относительную величину', dots: 'точки показывают долю наблюдений', calendar: 'сетка собирает дни в один лист', timeline: 'маршрут соединяет даты и значения' })[state.mode] || 'данные собраны в открытку'}`;
-  $('render-status').textContent = `${count} строк · ${state.mode}`;
+  const needsDate = ['calendar', 'timeline'].includes(state.mode) && !state.dateKey;
+  const selectedValues = state.dataset?.rows?.map((row) => parseNumber(row[state.valueKey])).filter((value) => value !== null) || [];
+  const status = needsDate ? 'этому виду нужна колонка даты' : selectedValues.length ? `${count} строк · ${state.mode}` : 'в выбранной колонке нет чисел';
+  $('render-status').textContent = status;
 }
 
 function render() {
@@ -137,7 +143,7 @@ function bind() {
   $('paste-button').addEventListener('click', handlePaste);
   $('export-svg').addEventListener('click', () => exportSvg(state.svg, 'data-postcard.svg'));
   $('export-png').addEventListener('click', () => exportPng(state.svg, state.size === 'stories' ? 1080 : 1200, state.size === 'stories' ? 1920 : 900, 'data-postcard.png'));
-  $('export-html').addEventListener('click', () => exportStandaloneHtml(state.svg, state.title, 'data-postcard.html', { title: state.title, caption: state.caption, unit: state.unit, mode: state.mode, theme: state.theme, size: state.size, headers: state.dataset?.headers || [], rows: state.dataset?.rows || [] }));
+  $('export-html').addEventListener('click', () => exportStandaloneHtml(state.svg, state.title, 'data-postcard.html', { title: state.title, caption: state.caption, unit: state.unit, mode: state.mode, theme: state.theme, size: state.size, headers: state.dataset?.headers || [], rows: state.dataset?.rows || [], rawRows: state.dataset?.rawRows || [] }));
 }
 
 document.addEventListener('DOMContentLoaded', () => { const sample = SAMPLES.reading; const parsed = parseText([sample.headers.join(','), ...sample.rows.map((row) => row.join(','))].join('\n'), 'reading.csv'); loadDataset(parsed.dataset, { ...sample, sourceLabel: sample.label }); bind(); render(); });
