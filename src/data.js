@@ -113,7 +113,7 @@ export function parseCsv(text) {
   const source = String(text ?? '').replace(/^\uFEFF/, '');
   const parsed = parseCsvRows(source);
   const matrix = parsed.matrix;
-  if (matrix.length === 0 || (matrix.length === 1 && matrix[0].every((value) => value === ''))) {
+  if (matrix.length === 0 || matrix.every((cells) => cells.every((value) => String(value).trim() === ''))) {
     return {
       headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'Файл пустой.')], warnings: []
     };

@@ -89,3 +89,8 @@ test('parseJson trims headers without losing their values', () => {
   assert.deepEqual(result.headers, ['date', 'value']);
   assert.deepEqual(result.rows[0], { date: '2026-10-01', value: 3 });
 });
+
+test('parseCsv treats whitespace-only input as empty', () => {
+  const result = parseCsv('\n\r\n');
+  assert.ok(result.errors.some((error) => error.code === 'empty-file'));
+});
