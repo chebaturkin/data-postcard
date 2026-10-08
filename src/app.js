@@ -14,7 +14,7 @@ const state = { title: '', caption: '', unit: '', mode: 'bars', order: 'input', 
 
 function rowsForRender() {
   if (!state.dataset) return [];
-  const rows = [...state.dataset.rows];
+  const rows = [...state.dataset.rows].filter((row) => state.showMissing || parseNumber(row[state.valueKey]) !== null);
   if (state.order === 'ascending' || state.order === 'descending') {
     const key = state.valueKey || state.categoryKey;
     rows.sort((a, b) => { const av = parseNumber(a[key]); const bv = parseNumber(b[key]); const left = av ?? String(a[key] ?? ''); const right = bv ?? String(b[key] ?? ''); return (left > right ? 1 : left < right ? -1 : 0) * (state.order === 'ascending' ? 1 : -1); });
@@ -70,6 +70,7 @@ function updateChrome() {
   $('postcard-date').textContent = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date()).replace(/\./g, ' / ');
   $('postcard-stage').setAttribute('aria-label', state.size === 'stories' ? 'Открытка 1080 на 1920' : 'Открытка 1200 на 900');
   $('stage-size').textContent = state.size === 'stories' ? '1080 × 1920 · stories' : '1200 × 900 · landscape';
+  $('stage-mode-note').innerHTML = `<span class="key-line" aria-hidden="true"></span> ${({ bars: 'полосы показывают относительную величину', dots: 'точки показывают долю наблюдений', calendar: 'сетка собирает дни в один лист', timeline: 'маршрут соединяет даты и значения' })[state.mode] || 'данные собраны в открытку'}`;
   $('render-status').textContent = `${count} строк · ${state.mode}`;
 }
 
@@ -95,7 +96,7 @@ function loadDataset(dataset, meta = {}) {
   state.valueKey = dataset.columns?.find((column) => column.type === 'number')?.key || dataset.headers[1] || dataset.headers[0];
   state.dateKey = dataset.columns?.find((column) => column.type === 'date')?.key || '';
   refreshColumns();
-  showErrors(dataset.errors || [], dataset.warnings || []);
+  showErrors(meta.errors || dataset.errors || [], meta.warnings || dataset.warnings || []);
   render();
 }
 
@@ -113,14 +114,14 @@ async function readFile(file) {
     $('render-status').textContent = 'Не удалось прочитать файл';
     return;
   }
-  loadDataset(parsed.dataset, { sourceLabel: file.name });
+  loadDataset(parsed.dataset, { sourceLabel: file.name, errors: parsed.errors, warnings: parsed.warnings });
 }
 
 function handlePaste() {
   const text = $('paste-input').value.trim();
   const parsed = parseText(text, text.startsWith('{') || text.startsWith('[') ? 'pasted.json' : 'pasted.csv', { pasted: true });
   if (!parsed.dataset) { showErrors(parsed.errors, parsed.warnings); $('render-status').textContent = 'Проверьте строки'; return; }
-  loadDataset(parsed.dataset, { sourceLabel: 'вставленные строки' });
+  loadDataset(parsed.dataset, { sourceLabel: 'вставленные строки', errors: parsed.errors, warnings: parsed.warnings });
 }
 
 function bind() {
@@ -136,7 +137,7 @@ function bind() {
   $('paste-button').addEventListener('click', handlePaste);
   $('export-svg').addEventListener('click', () => exportSvg(state.svg, 'data-postcard.svg'));
   $('export-png').addEventListener('click', () => exportPng(state.svg, state.size === 'stories' ? 1080 : 1200, state.size === 'stories' ? 1920 : 900, 'data-postcard.png'));
-  $('export-html').addEventListener('click', () => exportStandaloneHtml(state.svg, state.title, 'data-postcard.html'));
+  $('export-html').addEventListener('click', () => exportStandaloneHtml(state.svg, state.title, 'data-postcard.html', { title: state.title, caption: state.caption, unit: state.unit, mode: state.mode, theme: state.theme, size: state.size, headers: state.dataset?.headers || [], rows: state.dataset?.rows || [] }));
 }
 
 document.addEventListener('DOMContentLoaded', () => { const sample = SAMPLES.reading; const parsed = parseText([sample.headers.join(','), ...sample.rows.map((row) => row.join(','))].join('\n'), 'reading.csv'); loadDataset(parsed.dataset, { ...sample, sourceLabel: sample.label }); bind(); render(); });
