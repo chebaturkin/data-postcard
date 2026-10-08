@@ -15,3 +15,10 @@ test('standaloneHtml embeds SVG without network dependencies', () => {
   assert.match(html, /<svg viewBox/);
   assert.doesNotMatch(html, /https?:\/\//);
 });
+
+
+test('standaloneHtml escapes embedded metadata script delimiters', () => {
+  const html = standaloneHtml('<svg></svg>', 'Safe', { caption: '</script><script>alert(1)</script>' });
+  assert.doesNotMatch(html, /<\/script><script>alert/);
+  assert.ok(html.includes('\\u003c/script'));
+});
