@@ -200,3 +200,6 @@ button:focus-visible, input:focus-visible, textarea:focus-visible, select:focus-
   .postcard-stage { border: 0; box-shadow: none; padding: 0; }
   .postcard-paper { border: 1px solid #000; }
 }
+
+html[data-size="stories"] .postcard-paper { aspect-ratio: 9 / 16; }
+html[data-size="stories"] .postcard-paper__date { display: none; }
