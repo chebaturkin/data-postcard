@@ -117,6 +117,10 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 html[data-size="stories"] .postcard-paper { width: min(100%, 430px); aspect-ratio: 9 / 16; margin-inline: auto; }
 html[data-size="stories"] .postcard-paper__date { display: none; }
 
+@media (min-width: 781px) {
+  .settings-rail { position: sticky; top: 20px; max-height: calc(100vh - 40px); overflow-y: auto; padding-right: 8px; scrollbar-width: thin; }
+}
+
 @media (max-width: 1080px) {
   .masthead, .app-shell, .site-footer { width: min(100% - 48px, 860px); }
   .app-shell { grid-template-columns: minmax(0, 1fr) 300px; gap: 28px; }
