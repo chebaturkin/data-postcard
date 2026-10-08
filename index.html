@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="ru" data-theme="night" data-size="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#101820" />
+    <meta name="description" content="Data Postcard — локальная визуальная открытка из небольшого CSV или JSON." />
+    <title>Data Postcard — field notes in numbers</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#postcard-stage">К открытке</a>
+
+    <header class="masthead" aria-labelledby="site-title">
+      <div class="masthead__brand">
+        <p class="eyebrow">Field notes / 01</p>
+        <h1 id="site-title">Data Postcard</h1>
+      </div>
+      <p class="masthead__note">маленький визуальный артефакт<br />из ваших данных</p>
+    </header>
+
+    <main class="app-shell">
+      <section class="stage-column" aria-label="Предпросмотр открытки">
+        <div class="stage-heading">
+          <p class="eyebrow">Ваше поле</p>
+          <p class="stage-heading__status" id="render-status" aria-live="polite">Пример готов</p>
+        </div>
+
+        <section class="postcard-stage" id="postcard-stage" aria-label="Открытка 1200 на 900">
+          <div class="postcard-paper" id="postcard-paper" data-theme="night">
+            <div class="postcard-paper__header">
+              <p class="postcard-paper__kicker" id="postcard-kicker">Атлас внимания · 07 наблюдений</p>
+              <p class="postcard-paper__date" id="postcard-date">08 / 10 / 2026</p>
+            </div>
+            <svg
+              id="postcard-preview"
+              class="postcard-preview"
+              role="img"
+              aria-labelledby="postcard-title postcard-caption"
+              viewBox="0 0 1200 900"
+              preserveAspectRatio="xMidYMid meet"
+            ></svg>
+            <div class="postcard-paper__footer">
+              <p class="postcard-paper__source" id="postcard-source">локальная заметка · sample reading</p>
+              <p class="postcard-paper__mark" aria-hidden="true">DP—01</p>
+            </div>
+          </div>
+        </section>
+
+        <div class="stage-footnote">
+          <p><span class="key-line" aria-hidden="true"></span> полосы показывают относительную величину</p>
+          <p class="stage-footnote__size">1200 × 900 <span aria-hidden="true">·</span> landscape</p>
+        </div>
+      </section>
+
+      <aside class="settings-rail" aria-label="Настройки открытки">
+        <section class="rail-section rail-section--input" aria-labelledby="input-heading">
+          <div class="section-heading">
+            <h2 id="input-heading">Новый материал</h2>
+            <span class="section-index">01</span>
+          </div>
+
+          <div
+            class="drop-zone"
+            id="drop-zone"
+            tabindex="0"
+            role="button"
+            aria-describedby="drop-help data-errors"
+          >
+            <input id="file-input" class="visually-hidden" type="file" accept=".csv,.json,text/csv,application/json" />
+            <span class="drop-zone__icon" aria-hidden="true">↘</span>
+            <span class="drop-zone__title">Перетащите CSV или JSON</span>
+            <span class="drop-zone__hint" id="drop-help">или выберите файл с устройства</span>
+          </div>
+          <button class="text-button" id="import-button" type="button">Выбрать файл</button>
+
+          <label class="field-label" for="paste-input">
+            <span>Или вставьте строки</span>
+            <span class="field-label__hint">5–20 строк</span>
+          </label>
+          <textarea id="paste-input" class="paste-input" rows="4" placeholder="день,минуты\nпонедельник,32\nвторник,48"></textarea>
+          <button class="outline-button" id="paste-button" type="button">Взять эти строки</button>
+          <p class="input-error" id="data-errors" role="alert" hidden></p>
+          <p class="input-summary" id="data-summary" aria-live="polite">Пример: 7 строк · 2 колонки</p>
+        </section>
+
+        <section class="rail-section" aria-labelledby="edit-heading">
+          <div class="section-heading">
+            <h2 id="edit-heading">Подпись</h2>
+            <span class="section-index">02</span>
+          </div>
+          <label class="field-label" for="title-input">Заголовок</label>
+          <input class="text-input text-input--title" id="title-input" type="text" value="Тихие страницы" autocomplete="off" />
+          <label class="field-label" for="caption-input">Короткая заметка</label>
+          <textarea class="text-input text-input--area" id="caption-input" rows="2">Сколько минут осталось между делами этой недели.</textarea>
+          <label class="field-label" for="unit-input">Единицы</label>
+          <input class="text-input" id="unit-input" type="text" value="минуты" autocomplete="off" />
+        </section>
+
+        <section class="rail-section" aria-labelledby="view-heading">
+          <div class="section-heading">
+            <h2 id="view-heading">Вид</h2>
+            <span class="section-index">03</span>
+          </div>
+          <div class="control-grid">
+            <label class="field-label" for="mode-select">Представление</label>
+            <select class="select-input" id="mode-select">
+              <option value="bars">Полосы</option>
+              <option value="dots">Точки</option>
+              <option value="calendar">Календарная сетка</option>
+              <option value="timeline">Временной маршрут</option>
+            </select>
+
+            <label class="field-label" for="order-select">Порядок</label>
+            <select class="select-input" id="order-select">
+              <option value="input">Как в источнике</option>
+              <option value="ascending">От меньшего</option>
+              <option value="descending">От большего</option>
+            </select>
+          </div>
+          <div class="control-grid control-grid--columns">
+            <label class="field-label" for="category-select">Подписи</label>
+            <select class="select-input" id="category-select" aria-label="Колонка подписей">
+              <option value="day">день</option>
+            </select>
+            <label class="field-label" for="value-select">Значения</label>
+            <select class="select-input" id="value-select" aria-label="Колонка значений">
+              <option value="minutes">минуты</option>
+            </select>
+            <label class="field-label" for="date-select">Дата</label>
+            <select class="select-input" id="date-select" aria-label="Колонка дат">
+              <option value="">не используется</option>
+            </select>
+          </div>
+          <label class="check-row" for="missing-toggle">
+            <input id="missing-toggle" type="checkbox" checked />
+            <span>Показывать пустые значения</span>
+          </label>
+        </section>
+
+        <section class="rail-section" aria-labelledby="tone-heading">
+          <div class="section-heading">
+            <h2 id="tone-heading">Тон и размер</h2>
+            <span class="section-index">04</span>
+          </div>
+          <div class="control-grid">
+            <label class="field-label" for="theme-select">Тема</label>
+            <select class="select-input" id="theme-select">
+              <option value="night">Ночной атлас</option>
+              <option value="paper">Бумажная статистика</option>
+              <option value="court">Спортплощадка</option>
+              <option value="archive">Архив</option>
+              <option value="ink">Чёрно-белая печать</option>
+            </select>
+            <label class="field-label" for="size-select">Формат</label>
+            <select class="select-input" id="size-select">
+              <option value="landscape">1200 × 900</option>
+              <option value="stories">Stories · 1080 × 1920</option>
+            </select>
+          </div>
+        </section>
+
+        <section class="rail-section rail-section--samples" aria-labelledby="sample-heading">
+          <div class="section-heading">
+            <h2 id="sample-heading">Пробные записи</h2>
+            <span class="section-index">05</span>
+          </div>
+          <div class="sample-list" role="list" aria-label="Встроенные наборы данных">
+            <button class="sample-button" type="button" data-sample="reading"><span>01</span> чтение</button>
+            <button class="sample-button" type="button" data-sample="weather"><span>02</span> погода</button>
+            <button class="sample-button" type="button" data-sample="sport"><span>03</span> спорт</button>
+          </div>
+        </section>
+
+        <section class="rail-section rail-section--export" aria-labelledby="export-heading">
+          <div class="section-heading">
+            <h2 id="export-heading">Забрать с собой</h2>
+            <span class="section-index">06</span>
+          </div>
+          <div class="export-list">
+            <button class="export-button" id="export-png" type="button"><span>PNG</span><small>изображение</small></button>
+            <button class="export-button" id="export-svg" type="button"><span>SVG</span><small>вектор</small></button>
+            <button class="export-button" id="export-html" type="button"><span>HTML</span><small>автономная страница</small></button>
+          </div>
+          <p class="privacy-note"><span aria-hidden="true">⌁</span> Данные остаются в этом браузере.</p>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="site-footer">
+      <p>Data Postcard <span aria-hidden="true">·</span> локальный инструмент для маленьких историй</p>
+      <p>без загрузки данных <span aria-hidden="true">·</span> без регистрации</p>
+    </footer>
+
+    <script type="module" src="src/app.js"></script>
+  </body>
+</html>
