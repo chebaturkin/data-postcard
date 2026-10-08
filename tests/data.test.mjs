@@ -83,3 +83,9 @@ test('parseNumber accepts mixed thousands separators and parseDate is timezone-s
   assert.equal(data.parseNumber('1.234,56'), 1234.56);
   assert.equal(data.parseDate('Oct 1, 2026'), '2026-10-01');
 });
+
+test('parseJson trims headers without losing their values', () => {
+  const result = parseJson('[{" date ":"2026-10-01"," value ":3}]');
+  assert.deepEqual(result.headers, ['date', 'value']);
+  assert.deepEqual(result.rows[0], { date: '2026-10-01', value: 3 });
+});

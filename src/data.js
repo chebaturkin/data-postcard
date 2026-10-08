@@ -11,7 +11,7 @@ const MIN_ROWS = 5;
 const MAX_ROWS = 20;
 
 const NUMBER_HINTS = /(?:^|[_\s-])(amount|count|number|num|value|score|rating|total|quantity|qty|minutes?|temperature|temp|height|weight|distance|price|cost|amount|числ|колич|значен|сумм|оценк|минут|температур|круг)/i;
-const DATE_HINTS = /(?:^|[_\s-])(date|datetime|timestamp|time|day|дата|время|день)/i;
+const DATE_HINTS = /(?:^|[_\s-])(date|datetime|timestamp|time|дата|время)/i;
 
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const isMissing = (value) => value === null || value === undefined || (typeof value === 'string' && value.trim() === '');
@@ -207,10 +207,16 @@ export function parseJson(text) {
   if (headers.length === 0 && objectRows.length > 0) {
     errors.push(issue('missing-header', 'В JSON не найдено ни одной колонки.'));
   }
+  const cleanHeaders = headers.map(cleanHeader);
+  const cleanedRows = objectRows.map((row) => {
+    const cleaned = {};
+    headers.forEach((header, index) => { cleaned[cleanHeaders[index]] = row[header]; });
+    return cleaned;
+  });
 
   return {
-    headers: headers.map(cleanHeader),
-    rows: objectRows.map((row) => rowToObject(headers, row)),
+    headers: cleanHeaders,
+    rows: cleanedRows.map((row) => rowToObject(cleanHeaders, row)),
     rowLengths: objectRows.map(rowLength),
     errors,
     warnings
