@@ -240,27 +240,45 @@ export function parseNumber(value) {
   }
   text = text.replace(/[₽$€£%]/g, '').replace(/[\u00A0\u202F\s']/g, '');
   if (!text) return null;
-  if (!/^[+-]?(?:\d+(?:[.,]\d+)?|[.,]\d+)$/.test(text)) return null;
+  if (!/^[+-]?(?:\d+|\d*[.,]\d+)(?:[.,]\d+)*$/.test(text)) return null;
 
-  const commas = (text.match(/,/g) || []).length;
-  const dots = (text.match(/\./g) || []).length;
-  if (commas && dots) {
-    // The final separator is the decimal mark; all earlier marks are groups.
-    const decimal = text.lastIndexOf(',') > text.lastIndexOf('.') ? ',' : '.';
-    const grouping = decimal === ',' ? /\./g : /,/g;
-    text = text.replace(grouping, '').replace(decimal, '.');
-  } else if (commas) {
-    const parts = text.split(',');
-    if (parts.length > 2 || (parts.length === 2 && parts[1].length === 3 && parts[0].replace(/^[+-]/, '').length <= 3)) {
-      text = text.replace(/,/g, '');
+  const sign = /^[+-]/.test(text) ? text[0] : '';
+  const unsigned = sign ? text.slice(1) : text;
+  const commaCount = (unsigned.match(/,/g) || []).length;
+  const dotCount = (unsigned.match(/\./g) || []).length;
+  let integerPart = unsigned;
+  let fractionPart = '';
+
+  if (commaCount && dotCount) {
+    // The final separator is the decimal mark; earlier marks are groups.
+    const decimal = unsigned.lastIndexOf(',') > unsigned.lastIndexOf('.') ? ',' : '.';
+    const decimalIndex = unsigned.lastIndexOf(decimal);
+    integerPart = unsigned.slice(0, decimalIndex).replace(/[.,]/g, '');
+    fractionPart = unsigned.slice(decimalIndex + 1);
+  } else if (commaCount) {
+    const groups = unsigned.split(',');
+    const allThousands = groups.length > 2 && groups.slice(1).every((part) => part.length === 3)
+      || groups.length === 2 && groups[1].length === 3 && groups[0].length <= 3;
+    if (allThousands) {
+      integerPart = groups.join('');
+    } else if (groups.length === 2) {
+      integerPart = groups[0];
+      fractionPart = groups[1];
     } else {
-      text = text.replace(',', '.');
+      return null;
     }
-  } else if (dots > 1) {
-    text = text.replace(/\./g, '');
+  } else if (dotCount > 1) {
+    const groups = unsigned.split('.');
+    if (!groups.slice(1).every((part) => part.length === 3)) return null;
+    integerPart = groups.join('');
+  } else if (dotCount === 1) {
+    const decimalIndex = unsigned.indexOf('.');
+    integerPart = unsigned.slice(0, decimalIndex);
+    fractionPart = unsigned.slice(decimalIndex + 1);
   }
 
-  const number = Number(text);
+  if (!/^\d+$/.test(integerPart) || (fractionPart && !/^\d+$/.test(fractionPart))) return null;
+  const number = Number(`${sign}${integerPart}${fractionPart ? `.${fractionPart}` : ''}`);
   if (!Number.isFinite(number)) return null;
   return negative ? -Math.abs(number) : number;
 }
@@ -287,11 +305,16 @@ export function parseDate(value) {
     // Day-first is the least surprising interpretation for localized input.
     return dateParts(match[3], match[2], match[1]);
   }
-  // English month names are useful for pasted data and are unambiguous to the
-  // built-in parser when a four-digit year is present.
-  if (/\b\d{4}\b/.test(text) && /[A-Za-z]/.test(text)) {
-    const timestamp = Date.parse(text);
-    if (!Number.isNaN(timestamp)) return new Date(timestamp).toISOString().slice(0, 10);
+  // English month names are useful for pasted data. Parse them ourselves so
+  // the result is independent of the browser's local timezone.
+  const monthNames = { jan: 1, january: 1, feb: 2, february: 2, mar: 3, march: 3, apr: 4, april: 4, may: 5, jun: 6, june: 6, jul: 7, july: 7, aug: 8, august: 8, sep: 9, sept: 9, september: 9, oct: 10, october: 10, nov: 11, november: 11, dec: 12, december: 12 };
+  let monthMatch = text.match(/^([A-Za-z]+)\s+(\d{1,2}),?\s+(\d{4})$/);
+  if (!monthMatch) monthMatch = text.match(/^(\d{1,2})\s+([A-Za-z]+)\s+(\d{4})$/);
+  if (monthMatch) {
+    const monthToken = monthMatch[1].match(/^[A-Za-z]+$/) ? monthMatch[1] : monthMatch[2];
+    const dayToken = monthMatch[1].match(/^[A-Za-z]+$/) ? monthMatch[2] : monthMatch[1];
+    const month = monthNames[monthToken.toLowerCase()];
+    if (month) return dateParts(monthMatch[3], month, dayToken);
   }
   return null;
 }
