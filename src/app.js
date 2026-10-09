@@ -1,7 +1,7 @@
 import { parseText, inferColumns, parseNumber } from './data.js';
 import { buildScene } from './scene.js';
 import { exportSvg, exportPng, exportStandaloneHtml, sanitizeFilename } from './export.js';
-import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay } from './app-state.js';
+import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, fileImportError } from './app-state.js';
 
 const SAMPLES = {
   reading: { label: 'sample reading', title: 'неделя чтения', caption: 'семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
@@ -125,8 +125,23 @@ function loadSample(name) {
 }
 
 async function readFile(file) {
+  const policyError = fileImportError(file);
+  if (policyError) {
+    showErrors([{ message: policyError }]);
+    setRenderStatus(policyError);
+    $('file-input').value = '';
+    return;
+  }
   const request = ++importRequest;
-  const parsed = parseText(await file.text(), file.name, { source: 'file' });
+  let parsed;
+  try {
+    parsed = parseText(await file.text(), file.name, { source: 'file' });
+  } catch (error) {
+    showErrors([{ message: 'не удалось прочитать файл. выберите CSV или JSON до 1 МБ.' }]);
+    setRenderStatus(`не удалось прочитать файл · ${error.message}`);
+    $('file-input').value = '';
+    return;
+  }
   if (request !== importRequest) return;
   if (!parsed.dataset) {
     showErrors(parsed.errors, parsed.warnings);

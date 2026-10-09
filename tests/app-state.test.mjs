@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay } from '../src/app-state.js';
+import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, isSupportedFile, fileImportError, MAX_FILE_BYTES } from '../src/app-state.js';
 
 test('chooseDefaultMode selects a timeline only for date and number columns', () => {
   assert.equal(chooseDefaultMode([{ type: 'date' }, { type: 'number' }]), 'timeline');
@@ -50,4 +50,13 @@ test('sortRowsForDisplay keeps missing values last and preserves equal-value ord
     sortRowsForDisplay(rows, { order: 'input', key: 'score', parseValue }).map((row) => row.label),
     ['missing', 'ten-a', 'two', 'ten-b']
   );
+});
+
+test('file import policy accepts supported files and rejects unsafe or oversized ones', () => {
+  assert.equal(isSupportedFile({ name: 'notes.csv', type: 'text/csv', size: 12 }), true);
+  assert.equal(isSupportedFile({ name: 'notes.json', type: '', size: 12 }), true);
+  assert.equal(isSupportedFile({ name: 'notes.exe', type: 'application/octet-stream', size: 12 }), false);
+  assert.equal(isSupportedFile({ name: 'notes.csv', type: 'application/javascript', size: 12 }), false);
+  assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: MAX_FILE_BYTES + 1 }), 'файл слишком большой: максимум 1 МБ.');
+  assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: 12 }), '');
 });
