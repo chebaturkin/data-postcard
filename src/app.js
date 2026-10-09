@@ -1,7 +1,7 @@
 import { parseText, inferColumns, parseNumber } from './data.js';
 import { buildScene } from './scene.js';
 import { exportSvg, exportPng, exportStandaloneHtml, sanitizeFilename } from './export.js';
-import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset } from './app-state.js';
+import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay } from './app-state.js';
 
 const SAMPLES = {
   reading: { label: 'sample reading', title: 'Неделя чтения', caption: 'Семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
@@ -17,11 +17,7 @@ let importRequest = 0;
 function rowsForRender() {
   if (!state.dataset) return [];
   const rows = [...state.dataset.rows].filter((row) => state.showMissing || parseNumber(row[state.valueKey]) !== null);
-  if (state.order === 'ascending' || state.order === 'descending') {
-    const key = state.valueKey || state.categoryKey;
-    rows.sort((a, b) => { const av = parseNumber(a[key]); const bv = parseNumber(b[key]); const left = av ?? String(a[key] ?? ''); const right = bv ?? String(b[key] ?? ''); return (left > right ? 1 : left < right ? -1 : 0) * (state.order === 'ascending' ? 1 : -1); });
-  }
-  return rows;
+  return sortRowsForDisplay(rows, { order: state.order, key: state.valueKey || state.categoryKey, parseValue: parseNumber });
 }
 
 function setSelectOptions(id, options, selected) {

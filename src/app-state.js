@@ -70,9 +70,39 @@ export function canActivateDataset(dataset) {
   );
 }
 
+/**
+ * Return a stable display order while keeping blank cells at the end. Numeric
+ * columns are compared numerically; other values fall back to a locale-aware
+ * text comparison. The helper never mutates the dataset rows.
+ */
+export function sortRowsForDisplay(rows = [], { order = 'input', key = '', parseValue = (value) => value } = {}) {
+  const source = Array.isArray(rows) ? rows : [];
+  if (!['ascending', 'descending'].includes(order) || !key) return [...source];
+
+  const direction = order === 'ascending' ? 1 : -1;
+  return source
+    .map((row, index) => ({ row, index, raw: row?.[key], parsed: parseValue(row?.[key]) }))
+    .sort((left, right) => {
+      const leftMissing = left.raw === null || left.raw === undefined || (typeof left.raw === 'string' && left.raw.trim() === '');
+      const rightMissing = right.raw === null || right.raw === undefined || (typeof right.raw === 'string' && right.raw.trim() === '');
+      if (leftMissing !== rightMissing) return leftMissing ? 1 : -1;
+
+      const bothNumbers = typeof left.parsed === 'number'
+        && Number.isFinite(left.parsed)
+        && typeof right.parsed === 'number'
+        && Number.isFinite(right.parsed);
+      const comparison = bothNumbers
+        ? left.parsed - right.parsed
+        : String(left.raw ?? '').localeCompare(String(right.raw ?? ''), 'ru', { numeric: true, sensitivity: 'base' });
+      return comparison === 0 ? left.index - right.index : comparison * direction;
+    })
+    .map(({ row }) => row);
+}
+
 export default {
   chooseDefaultMode,
   modeLabel,
   sourceLabel,
-  canActivateDataset
+  canActivateDataset,
+  sortRowsForDisplay
 };

@@ -21,6 +21,14 @@ const formatValue = (value, unit = '') => {
   if (value === null || value === undefined || Number.isNaN(value)) return '—';
   return `${formatNumber(value)}${safeText(unit) ? ` ${safeText(unit)}` : ''}`;
 };
+const russianPlural = (count, one, few, many) => {
+  const value = Math.abs(Number(count)) % 100;
+  if (value >= 11 && value <= 14) return many;
+  const last = value % 10;
+  if (last === 1) return one;
+  if (last >= 2 && last <= 4) return few;
+  return many;
+};
 const monthFormatter = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' });
 const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', timeZone: 'UTC' });
 const dateLabel = (date) => date ? dateFormatter.format(date).replace('.', '') : '';
@@ -322,29 +330,31 @@ function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop,
   const lastRowY = chartTop + rowsOfBlocks * (blockHeight + gap) - gap;
   if (undated.length) {
     const undatedText = undated.slice(0, 3).map(({ row, index }) => `${shorten(row?.[categoryKey] ?? `строка ${index + 1}`, stories ? 15 : 18)} · ${formatValue(number(row?.[valueKey]), unit)}`).join('  |  ');
-    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `Без корректной даты · ${undated.length} строк`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
+    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `Без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
     output += text(margin, Math.min(chartBottom + 4, lastRowY + 46), undatedText, { class: 'mono', fill: theme.muted, 'font-size': 10 });
   }
   return output;
 }
 
-function timelinePoints(rows, dateKey, valueKey) {
+function timelineData(rows, dateKey, valueKey) {
   const points = [];
+  const undated = [];
   rows.forEach((row, index) => {
     const date = asDate(row?.[dateKey]);
     if (date) points.push({ date, iso: isoDate(date), value: number(row?.[valueKey]), row, index });
+    else undated.push({ row, index });
   });
   points.sort((a, b) => a.date - b.date || a.index - b.index);
   const counts = new Map();
   points.forEach((point) => counts.set(point.iso, (counts.get(point.iso) || 0) + 1));
   const seen = new Map();
   points.forEach((point) => { const n = counts.get(point.iso); point.duplicate = n > 1; point.ordinal = seen.get(point.iso) || 0; seen.set(point.iso, point.ordinal + 1); });
-  return points;
+  return { points, undated };
 }
 
 function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
   if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нужна колонка с датой', detail: 'Выберите колонку с датой для временного маршрута.' });
-  const points = timelinePoints(rows, dateKey, valueKey);
+  const { points, undated } = timelineData(rows, dateKey, valueKey);
   if (!points.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет корректных дат', detail: 'Проверьте формат дат в выбранной колонке.' });
   const valid = points.map((point) => point.value).filter((value) => value !== null);
   if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Добавьте значения для выбранной колонки.' });
@@ -399,6 +409,12 @@ function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop,
       output += text(x, bottom + 31, dateLabel(point.date), { class: 'mono', fill: theme.muted, 'font-size': width < 1100 ? 10 : 9, 'text-anchor': 'middle' });
     }
   });
+  if (undated.length) {
+    const noteY = Math.min(chartBottom - 4, bottom + 42);
+    const sample = undated.slice(0, 3).map(({ row, index }) => shorten(row?.[valueKey] ?? `строка ${index + 1}`, width < 1100 ? 16 : 20)).join('  ·  ');
+    output += text(margin, noteY, `Без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
+    output += text(margin, Math.min(chartBottom + 16, noteY + 20), sample, { class: 'mono', fill: theme.muted, 'font-size': 10 });
+  }
   return output;
 }
 
