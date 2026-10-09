@@ -34,7 +34,7 @@ const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 
 const dateLabel = (date) => date ? dateFormatter.format(date).replace('.', '') : '';
 const monthLabel = (date) => {
   const value = monthFormatter.format(date).replace('.', '');
-  return value.charAt(0).toUpperCase() + value.slice(1);
+  return value.toLowerCase();
 };
 
 const FONT_CSS = `
@@ -139,7 +139,7 @@ function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
     });
   }
   output += `<line x1="${margin}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${theme.line}" stroke-width="1"/>`;
-  if (safeText(unit)) output += text(margin, ruleY + 27, `Единица · ${safeText(unit)}`, {
+  if (safeText(unit)) output += text(margin, ruleY + 27, `единица · ${safeText(unit)}`, {
     class: 'mono', fill: theme.accent, 'font-size': 12, 'letter-spacing': '.6',
   });
   return { markup: output, chartTop: ruleY + (safeText(unit) ? 56 : 35) };
@@ -280,7 +280,7 @@ function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop,
   const cellHeight = clamp(availableHeight / (rowsOfBlocks * maxWeeks), stories ? 18 : 14, stories ? 48 : 30);
   const cellWidth = (blockWidth - 8) / 7;
   const blockHeight = 33 + maxWeeks * cellHeight;
-  const weekdays = ['П', 'В', 'С', 'Ч', 'П', 'С', 'В'];
+  const weekdays = ['п', 'в', 'с', 'ч', 'п', 'с', 'в'];
   const maxCalendarValue = Math.max(...rows.map((row) => Math.abs(number(row?.[valueKey]) ?? 0)), 1);
   let output = '';
   groups.forEach((group, groupIndex) => {

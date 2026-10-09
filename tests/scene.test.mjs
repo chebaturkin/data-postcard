@@ -39,3 +39,14 @@ test('empty scene uses lowercase correction copy', () => {
   assert.match(svg, /нет строк для отображения/);
   assert.match(svg, /добавьте строки данных, чтобы собрать открытку/);
 });
+
+test('calendar labels keep the postcard copy in lowercase', () => {
+  const svg = buildScene({
+    rows: [{ date: '2026-10-01', value: 4 }],
+    dataset: { headers: ['date', 'value'], columns: [{ key: 'date', type: 'date' }, { key: 'value', type: 'number' }] },
+    state: { title: 'дворовая дистанция', caption: 'круги после работы.', unit: 'круги', mode: 'calendar', dateKey: 'date', valueKey: 'value', size: 'landscape' },
+  });
+  assert.match(svg, /единица · круги/);
+  assert.match(svg, /октябрь 2026 г/);
+  assert.match(svg, />п<\/text>/);
+});

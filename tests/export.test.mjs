@@ -9,6 +9,7 @@ test('svgBlob rejects empty markup so exports cannot produce a blank file', () =
 
 test('sanitizeFilename keeps useful names and removes unsafe path characters', () => {
   assert.equal(sanitizeFilename('Неделя чтения / 07', 'postcard'), 'Неделя чтения 07');
+  assert.equal(sanitizeFilename('строка\nс точкой.', 'postcard'), 'строка с точкой');
   assert.equal(sanitizeFilename('   ', 'postcard'), 'postcard');
   assert.equal(sanitizeFilename('', 'postcard'), 'postcard');
 });
