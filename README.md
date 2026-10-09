@@ -46,6 +46,8 @@ python3 -m http.server 8000
 
 в репозитории уже есть workflow для GitHub Pages: `.github/workflows/pages.yml`. после включения GitHub Pages с источником `GitHub Actions` каждое обновление ветки `master` публикует корень проекта. `404.html` оставляет ту же тихую навигацию, если кто-то открыл старую ссылку.
 
+[открыть опубликованную открытку](https://chebaturkin.github.io/data-postcard/)
+
 ## проверить изменения
 
 ```bash
