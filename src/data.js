@@ -141,7 +141,7 @@ function parseCsvRows(text) {
       // the value readable but report it to the caller.
       errors.push(issue(
         'csv-parse',
-        'После закрывающей кавычки найден недопустимый символ.',
+        'после закрывающей кавычки найден недопустимый символ.',
         { row: matrix.length + 1, column: row.length + 1 }
       ));
       field += char;
@@ -153,7 +153,7 @@ function parseCsvRows(text) {
   }
 
   if (quoted) {
-    errors.push(issue('csv-parse', 'Кавычки в CSV не закрыты.', { row: matrix.length + 1, column: row.length + 1 }));
+    errors.push(issue('csv-parse', 'кавычки в CSV не закрыты.', { row: matrix.length + 1, column: row.length + 1 }));
     return { matrix, errors, malformed: true };
   }
 
@@ -170,12 +170,12 @@ function parseCsvRows(text) {
 /** Parse a CSV string, retaining source values as strings. */
 export function parseCsv(text) {
   const source = String(text ?? '').replace(/^\uFEFF/, '');
-  if (!source.trim()) return { headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'Файл пустой.')], warnings: [] };
+  if (!source.trim()) return { headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'файл пустой.')], warnings: [] };
   const parsed = parseCsvRows(source);
   const matrix = parsed.matrix;
   if (matrix.length === 0 || matrix.every((cells) => cells.every((value) => String(value).trim() === ''))) {
     return {
-      headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'Файл пустой.')], warnings: []
+      headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'файл пустой.')], warnings: []
     };
   }
 
@@ -189,7 +189,7 @@ export function parseCsv(text) {
     if (cells.length !== expectedLength) {
       errors.push(issue(
         'inconsistent-row',
-        `Строка ${index + 2}: ожидалось ${expectedLength} значений, найдено ${cells.length}.`,
+        `строка ${index + 2}: ожидалось ${expectedLength} значений, найдено ${cells.length}.`,
         { row: index + 2, expected: expectedLength, actual: cells.length }
       ));
     }
@@ -224,7 +224,7 @@ function headersFromObjects(rows) {
 export function parseJson(text) {
   const source = String(text ?? '').replace(/^\uFEFF/, '').trim();
   if (!source) {
-    return { headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'Файл пустой.')], warnings: [] };
+    return { headers: [], rows: [], rowLengths: [], errors: [issue('empty-file', 'файл пустой.')], warnings: [] };
   }
 
   let value;
@@ -249,7 +249,7 @@ export function parseJson(text) {
     }
     rows = arrayEntries[0][1];
     if (arrayEntries.length > 1) {
-      warnings.push(issue('multiple-arrays', `В JSON найдено несколько массивов; использован «${arrayEntries[0][0]}».`, { field: arrayEntries[0][0] }));
+      warnings.push(issue('multiple-arrays', `в JSON найдено несколько массивов; использован «${arrayEntries[0][0]}».`, { field: arrayEntries[0][0] }));
     }
   }
 
@@ -260,7 +260,7 @@ export function parseJson(text) {
   const errors = [];
   const objectRows = rows.map((row, index) => {
     if (!isObject(row)) {
-      errors.push(issue('invalid-json-row', `Строка ${index + 1}: ожидался объект.`, { row: index + 1 }));
+      errors.push(issue('invalid-json-row', `строка ${index + 1}: ожидался объект.`, { row: index + 1 }));
       return {};
     }
     return row;
@@ -269,7 +269,7 @@ export function parseJson(text) {
   const sourceHeaders = rawHeaders.map(cleanHeader);
   const headers = stableHeaderKeys(sourceHeaders);
   if (sourceHeaders.length === 0 && objectRows.length > 0) {
-    errors.push(issue('missing-header', 'В JSON не найдено ни одной колонки.'));
+    errors.push(issue('missing-header', 'в JSON не найдено ни одной колонки.'));
   }
   const cleanedRows = objectRows.map((row) => {
     const cleaned = {};
@@ -432,9 +432,9 @@ function duplicateHeaderIssues(headers) {
     const cleaned = cleanHeader(header);
     const key = cleaned.toLocaleLowerCase();
     if (!cleaned) {
-      errors.push(issue('missing-header', `Колонка ${index + 1} не имеет названия.`, { column: index + 1 }));
+      errors.push(issue('missing-header', `колонка ${index + 1} не имеет названия.`, { column: index + 1 }));
     } else if (seen.has(key)) {
-      errors.push(issue('duplicate-header', `Дублирующееся название колонки «${cleaned}».`, { column: cleaned, index: index + 1 }));
+      errors.push(issue('duplicate-header', `дублирующееся название колонки «${cleaned}».`, { column: cleaned, index: index + 1 }));
     } else {
       seen.set(key, index);
     }
@@ -466,24 +466,24 @@ export function validateDataset(headersOrDataset, maybeRows) {
   errors.push(...duplicateHeaderIssues(sourceHeaders));
   const isEmpty = headers.length === 0 && sourceRows.length === 0;
   if (isEmpty) {
-    errors.push(issue('empty-file', 'Файл пустой.'));
+    errors.push(issue('empty-file', 'файл пустой.'));
   } else if (headers.length === 0) {
-    errors.push(issue('missing-header', 'Не найдено ни одной колонки.'));
+    errors.push(issue('missing-header', 'не найдено ни одной колонки.'));
   }
 
   const rowLengths = Array.isArray(source.rowLengths) ? source.rowLengths : sourceRows.map(rowLength);
   if (headers.length && rowLengths.some((length) => length !== headers.length) && !sourceRows.every(isObject)) {
     rowLengths.forEach((length, index) => {
       if (length !== headers.length) {
-        errors.push(issue('inconsistent-row', `Строка ${index + 2}: ожидалось ${headers.length} значений, найдено ${length}.`, { row: index + 2, expected: headers.length, actual: length }));
+        errors.push(issue('inconsistent-row', `строка ${index + 2}: ожидалось ${headers.length} значений, найдено ${length}.`, { row: index + 2, expected: headers.length, actual: length }));
       }
     });
   }
 
   if (!isEmpty && sourceRows.length < MIN_ROWS) {
-    errors.push(issue('row-count', `Нужно минимум ${MIN_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
+    errors.push(issue('row-count', `нужно минимум ${MIN_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   } else if (sourceRows.length > MAX_ROWS) {
-    errors.push(issue('row-count', `Можно использовать максимум ${MAX_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
+    errors.push(issue('row-count', `можно использовать максимум ${MAX_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   }
 
   const columns = inferColumns(headers, normalized.rows).map((column, index) => ({
@@ -498,14 +498,14 @@ export function validateDataset(headersOrDataset, maybeRows) {
       const original = row[header];
       if (isMissing(original)) {
         typed[header] = null;
-        warnings.push(issue('missing-value', `Строка ${rowIndex + 2}, колонка «${label}»: значение пустое.`, { row: rowIndex + 2, column: label }));
+        warnings.push(issue('missing-value', `строка ${rowIndex + 2}, колонка «${label}»: значение пустое.`, { row: rowIndex + 2, column: label }));
         return;
       }
       const column = columns.find((candidate) => candidate.key === header);
       if (column?.type === 'number') {
         const number = parseNumber(original);
         if (number === null) {
-          errors.push(issue('invalid-number', `Строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является числом.`, { row: rowIndex + 2, column: label }));
+          errors.push(issue('invalid-number', `строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является числом.`, { row: rowIndex + 2, column: label }));
           typed[header] = null;
         } else {
           typed[header] = number;
@@ -513,7 +513,7 @@ export function validateDataset(headersOrDataset, maybeRows) {
       } else if (column?.type === 'date') {
         const date = parseDate(original);
         if (date === null) {
-          errors.push(issue('invalid-date', `Строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является датой.`, { row: rowIndex + 2, column: label, reason: 'mixed-date' }));
+          errors.push(issue('invalid-date', `строка ${rowIndex + 2}, колонка «${label}»: «${String(original)}» не является датой.`, { row: rowIndex + 2, column: label, reason: 'mixed-date' }));
           typed[header] = original;
         } else {
           typed[header] = date;

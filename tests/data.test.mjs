@@ -51,6 +51,7 @@ test('parseText returns a normalized dataset and clear file errors', () => {
   assert.equal(result.dataset.rows.length, 5);
   const empty = parseText('', 'empty.csv');
   assert.ok(empty.errors.some((error) => error.code === 'empty-file'));
+  assert.equal(empty.errors.find((error) => error.code === 'empty-file').message, 'файл пустой.');
 });
 
 test('normalizeDataset pads short rows and preserves headers', () => {

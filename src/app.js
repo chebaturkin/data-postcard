@@ -4,9 +4,9 @@ import { exportSvg, exportPng, exportStandaloneHtml, sanitizeFilename } from './
 import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay } from './app-state.js';
 
 const SAMPLES = {
-  reading: { label: 'sample reading', title: 'Неделя чтения', caption: 'Семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
-  weather: { label: 'sample weather', title: 'Окно на север', caption: 'Температура и свет в конце длинной недели.', unit: '°C', headers: ['дата', 'температура'], rows: [['2026-10-02', 11], ['2026-10-03', 13], ['2026-10-04', 8], ['2026-10-05', 7], ['2026-10-06', 10], ['2026-10-07', 12], ['2026-10-08', 9]] },
-  sport: { label: 'sample sport', title: 'Дворовая дистанция', caption: 'Круги после работы, пока площадка не опустела.', unit: 'круги', headers: ['дата', 'круги'], rows: [['2026-09-28', 4], ['2026-09-29', 6], ['2026-09-30', 5], ['2026-10-01', 8], ['2026-10-02', 7], ['2026-10-03', 10], ['2026-10-04', 9]] },
+  reading: { label: 'sample reading', title: 'неделя чтения', caption: 'семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },
+  weather: { label: 'sample weather', title: 'окно на север', caption: 'температура и свет в конце длинной недели.', unit: '°C', headers: ['дата', 'температура'], rows: [['2026-10-02', 11], ['2026-10-03', 13], ['2026-10-04', 8], ['2026-10-05', 7], ['2026-10-06', 10], ['2026-10-07', 12], ['2026-10-08', 9]] },
+  sport: { label: 'sample sport', title: 'дворовая дистанция', caption: 'круги после работы, пока площадка не опустела.', unit: 'круги', headers: ['дата', 'круги'], rows: [['2026-09-28', 4], ['2026-09-29', 6], ['2026-09-30', 5], ['2026-10-01', 8], ['2026-10-02', 7], ['2026-10-03', 10], ['2026-10-04', 9]] },
 };
 
 const $ = (id) => document.getElementById(id);
@@ -79,8 +79,8 @@ function updateChrome() {
   $('postcard-kicker').textContent = `${state.title} · ${String(count).padStart(2, '0')} наблюдений`;
   $('postcard-source').textContent = `локальная заметка · ${sourceLabel(state.sourceLabel)}`;
   $('postcard-date').textContent = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: '2-digit', year: 'numeric' }).format(new Date()).replace(/\./g, ' / ');
-  $('postcard-stage').setAttribute('aria-label', state.size === 'stories' ? 'Открытка 1080 на 1920' : 'Открытка 1200 на 900');
-  $('stage-size').textContent = state.size === 'stories' ? '1080 × 1920 · stories' : '1200 × 900 · landscape';
+  $('postcard-stage').setAttribute('aria-label', state.size === 'stories' ? 'открытка 1080 на 1920' : 'открытка 1200 на 900');
+  $('stage-size').textContent = state.size === 'stories' ? '1080 × 1920 · Stories' : '1200 × 900 · landscape';
   $('stage-mode-note').innerHTML = `<span class="key-line" aria-hidden="true"></span> ${({ bars: 'полосы показывают относительную величину', dots: 'точки показывают долю наблюдений', calendar: 'сетка собирает дни в один лист', timeline: 'маршрут соединяет даты и значения' })[state.mode] || 'данные собраны в открытку'}`;
   const needsDate = ['calendar', 'timeline'].includes(state.mode) && !state.dateKey;
   const selectedValues = state.dataset?.rows?.map((row) => parseNumber(row[state.valueKey])).filter((value) => value !== null) || [];
@@ -104,8 +104,8 @@ function loadDataset(dataset, meta = {}) {
   state.dataset = dataset;
   state.sourceLabel = meta.sourceLabel || 'локальный набор';
   state.sample = meta.sample || '';
-  state.title = meta.title || 'Новая заметка';
-  state.caption = meta.caption || 'Маленькая история, собранная из ваших строк.';
+  state.title = meta.title || 'новая заметка';
+  state.caption = meta.caption || 'маленькая история, собранная из ваших строк.';
   state.unit = meta.unit || '';
   state.mode = chooseDefaultMode(dataset.columns);
   state.categoryKey = dataset.columns?.find((column) => column.type === 'category')?.key || dataset.headers[0];
@@ -121,7 +121,7 @@ function loadSample(name) {
   const sample = SAMPLES[name] || SAMPLES.reading;
   const parsed = parseText([sample.headers.join(','), ...sample.rows.map((row) => row.join(','))].join('\n'), `${name}.csv`);
   if (parsed.dataset) loadDataset(parsed.dataset, { ...sample, sample: name, sourceLabel: sample.label });
-  setRenderStatus(`Загружен набор · ${sourceLabel(sample.label)}`);
+  setRenderStatus(`загружен набор · ${sourceLabel(sample.label)}`);
 }
 
 async function readFile(file) {
@@ -130,7 +130,7 @@ async function readFile(file) {
   if (request !== importRequest) return;
   if (!parsed.dataset) {
     showErrors(parsed.errors, parsed.warnings);
-    setRenderStatus('Не удалось прочитать файл · открытка сохранена');
+    setRenderStatus('не удалось прочитать файл · открытка сохранена');
     $('file-input').value = '';
     return;
   }
@@ -141,7 +141,7 @@ async function readFile(file) {
 function handlePaste() {
   const text = $('paste-input').value.trim();
   const parsed = parseText(text, text.startsWith('{') || text.startsWith('[') ? 'pasted.json' : 'pasted.csv', { source: 'paste' });
-  if (!parsed.dataset) { showErrors(parsed.errors, parsed.warnings); setRenderStatus('Проверьте строки · открытка сохранена'); return; }
+  if (!parsed.dataset) { showErrors(parsed.errors, parsed.warnings); setRenderStatus('проверьте строки · открытка сохранена'); return; }
   loadDataset(parsed.dataset, { sourceLabel: 'вставленные строки', errors: parsed.errors, warnings: parsed.warnings });
 }
 
@@ -159,25 +159,25 @@ function bind() {
   $('export-svg').addEventListener('click', () => {
     try {
       exportSvg(state.svg, `${sanitizeFilename(state.title)}.svg`);
-      setRenderStatus('Сохранено · SVG');
+      setRenderStatus('сохранено · SVG');
     } catch (error) {
-      setRenderStatus(`Не удалось сохранить SVG · ${error.message}`);
+      setRenderStatus(`не удалось сохранить SVG · ${error.message}`);
     }
   });
   $('export-png').addEventListener('click', async () => {
     try {
       await exportPng(state.svg, state.size === 'stories' ? 1080 : 1200, state.size === 'stories' ? 1920 : 900, `${sanitizeFilename(state.title)}.png`);
-      setRenderStatus('Сохранено · PNG');
+      setRenderStatus('сохранено · PNG');
     } catch (error) {
-      setRenderStatus(`Не удалось сохранить PNG · ${error.message}`);
+      setRenderStatus(`не удалось сохранить PNG · ${error.message}`);
     }
   });
   $('export-html').addEventListener('click', () => {
     try {
       exportStandaloneHtml(state.svg, state.title, `${sanitizeFilename(state.title)}.html`, { title: state.title, caption: state.caption, unit: state.unit, mode: state.mode, theme: state.theme, size: state.size, headers: state.dataset?.headers || [], rows: state.dataset?.rows || [], rawRows: state.dataset?.rawRows || [] });
-      setRenderStatus('Сохранено · HTML');
+      setRenderStatus('сохранено · HTML');
     } catch (error) {
-      setRenderStatus(`Не удалось сохранить HTML · ${error.message}`);
+      setRenderStatus(`не удалось сохранить HTML · ${error.message}`);
     }
   });
 }

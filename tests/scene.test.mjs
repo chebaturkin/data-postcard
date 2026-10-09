@@ -31,5 +31,11 @@ test('timeline explains rows whose dates cannot be placed on the route', () => {
     },
   });
 
-  assert.match(svg, /Без корректной даты · 2 строки/);
+  assert.match(svg, /без корректной даты · 2 строки/);
+});
+
+test('empty scene uses lowercase correction copy', () => {
+  const svg = buildScene({ rows: [], state: { title: 'Заметка', caption: '', mode: 'bars', size: 'landscape' } });
+  assert.match(svg, /нет строк для отображения/);
+  assert.match(svg, /добавьте строки данных, чтобы собрать открытку/);
 });

@@ -5,7 +5,7 @@
 export const THEMES = {
   // Keep the historic theme names because they are part of the UI contract.
   night: {
-    label: 'Ночной атлас',
+    label: 'ночной атлас',
     bg: '#252b21',
     paper: '#252b21',
     ink: '#f7f3e8',
@@ -16,7 +16,7 @@ export const THEMES = {
     soft: '#697546',
   },
   paper: {
-    label: 'Бумажная статистика',
+    label: 'бумажная статистика',
     bg: '#eee9dc',
     paper: '#f7f3e8',
     ink: '#252b21',
@@ -27,7 +27,7 @@ export const THEMES = {
     soft: '#697546',
   },
   court: {
-    label: 'Спортплощадка',
+    label: 'спортплощадка',
     bg: '#e7e8dd',
     paper: '#f1f2e8',
     ink: '#252b21',
@@ -38,7 +38,7 @@ export const THEMES = {
     soft: '#4e6c63',
   },
   archive: {
-    label: 'Архив',
+    label: 'архив',
     bg: '#e9e1d5',
     paper: '#f4ede2',
     ink: '#252b21',
@@ -49,7 +49,7 @@ export const THEMES = {
     soft: '#697546',
   },
   ink: {
-    label: 'Чёрно-белая печать',
+    label: 'чёрно-белая печать',
     bg: '#ffffff',
     paper: '#ffffff',
     ink: '#111111',

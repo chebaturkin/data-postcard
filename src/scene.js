@@ -80,7 +80,7 @@ function wrapText(value, maxChars, maxLines = 3) {
 }
 
 function shorten(value, maxChars = 22) {
-  const source = safeText(value, 'Без названия');
+  const source = safeText(value, 'без названия');
   if (source.length <= maxChars) return source;
   return `${source.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
 }
@@ -121,7 +121,7 @@ function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
   const ruleY = captionY + Math.max(1, captionLines.length) * captionLineHeight + 25;
   const right = width - margin;
   const summaryX = right - summaryWidth;
-  let output = multilineText(margin, titleY, titleLines.length ? titleLines : ['Без названия'], {
+  let output = multilineText(margin, titleY, titleLines.length ? titleLines : ['без названия'], {
     class: 'literata', fill: theme.ink, 'font-size': titleSize, 'font-weight': 500, 'letter-spacing': '-1.1',
   }, titleLineHeight);
   if (captionLines.length) output += multilineText(margin + 2, captionY, captionLines, {
@@ -168,7 +168,7 @@ function renderAxis({ min, max, x1, x2, y, theme, fontSize = 10 }) {
 function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, state }) {
   const values = rows.map((row) => number(row?.[valueKey]));
   const valid = values.filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Выберите числовую колонку или добавьте значения.' });
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'выберите числовую колонку или добавьте значения.' });
   const min = Math.min(...valid, 0);
   const max = Math.max(...valid, 0);
   const span = Math.max(max - min, 1);
@@ -187,7 +187,7 @@ function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
     const value = values[index];
     const y = top + index * rowHeight + (rowHeight - barHeight) / 2;
     const centerY = y + barHeight / 2;
-    const category = shorten(row?.[categoryKey] ?? row?.date ?? `Строка ${index + 1}`, width < 1100 ? 30 : 26);
+    const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
     output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" opacity=".65"/>`;
     output += text(margin, centerY + clamp(rowHeight * .26, 5, 8), category, {
       class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .54, 10, 15),
@@ -213,7 +213,7 @@ function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
 function renderDots({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
   const values = rows.map((row) => number(row?.[valueKey]));
   const valid = values.filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Выберите числовую колонку или добавьте значения.' });
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'выберите числовую колонку или добавьте значения.' });
   const min = Math.min(...valid, 0);
   const max = Math.max(...valid, 0);
   const span = Math.max(max - min, 1);
@@ -229,7 +229,7 @@ function renderDots({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
   rows.forEach((row, index) => {
     const value = values[index];
     const centerY = top + index * rowHeight + rowHeight / 2;
-    const category = shorten(row?.[categoryKey] ?? row?.date ?? `Строка ${index + 1}`, width < 1100 ? 30 : 26);
+    const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
     output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="1 8"/>`;
     output += text(margin, centerY + clamp(rowHeight * .22, 5, 8), category, {
       class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15),
@@ -262,9 +262,9 @@ function calendarEntries(rows, dateKey, valueKey) {
 }
 
 function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, categoryKey }) {
-  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нужна колонка с датой', detail: 'Выберите колонку с датой для календарной сетки.' });
+  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нужна колонка с датой', detail: 'выберите колонку с датой для календарной сетки.' });
   const { groups, undated } = calendarEntries(rows, dateKey, valueKey);
-  if (!groups.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет корректных дат', detail: 'Проверьте формат дат в выбранной колонке.' });
+  if (!groups.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет корректных дат', detail: 'проверьте формат дат в выбранной колонке.' });
   const stories = width < 1100;
   const cols = Math.min(stories ? 3 : 5, groups.length);
   const gap = stories ? 18 : 12;
@@ -330,7 +330,7 @@ function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop,
   const lastRowY = chartTop + rowsOfBlocks * (blockHeight + gap) - gap;
   if (undated.length) {
     const undatedText = undated.slice(0, 3).map(({ row, index }) => `${shorten(row?.[categoryKey] ?? `строка ${index + 1}`, stories ? 15 : 18)} · ${formatValue(number(row?.[valueKey]), unit)}`).join('  |  ');
-    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `Без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
+    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
     output += text(margin, Math.min(chartBottom + 4, lastRowY + 46), undatedText, { class: 'mono', fill: theme.muted, 'font-size': 10 });
   }
   return output;
@@ -353,11 +353,11 @@ function timelineData(rows, dateKey, valueKey) {
 }
 
 function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
-  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нужна колонка с датой', detail: 'Выберите колонку с датой для временного маршрута.' });
+  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нужна колонка с датой', detail: 'выберите колонку с датой для временного маршрута.' });
   const { points, undated } = timelineData(rows, dateKey, valueKey);
-  if (!points.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет корректных дат', detail: 'Проверьте формат дат в выбранной колонке.' });
+  if (!points.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет корректных дат', detail: 'проверьте формат дат в выбранной колонке.' });
   const valid = points.map((point) => point.value).filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'Нет числовых значений', detail: 'Добавьте значения для выбранной колонки.' });
+  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'добавьте значения для выбранной колонки.' });
   const min = Math.min(...valid, 0);
   const max = Math.max(...valid, 0);
   const span = Math.max(max - min, 1);
@@ -412,7 +412,7 @@ function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop,
   if (undated.length) {
     const noteY = Math.min(chartBottom - 4, bottom + 42);
     const sample = undated.slice(0, 3).map(({ row, index }) => shorten(row?.[valueKey] ?? `строка ${index + 1}`, width < 1100 ? 16 : 20)).join('  ·  ');
-    output += text(margin, noteY, `Без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
+    output += text(margin, noteY, `без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
     output += text(margin, Math.min(chartBottom + 16, noteY + 20), sample, { class: 'mono', fill: theme.muted, 'font-size': 10 });
   }
   return output;
@@ -463,13 +463,13 @@ export function buildScene({ rows = [], state = {}, dataset = {}, themeName = 'p
   const chartBottom = height - (stories ? 138 : 104);
   const payload = { rows: safeRows, categoryKey, valueKey, dateKey, unit, theme, width, chartTop: header.chartTop, chartBottom, margin, state };
   let chart;
-  if (!safeRows.length) chart = renderMessage({ theme, width, chartTop: header.chartTop, chartBottom, title: 'Нет строк для отображения', detail: 'Добавьте строки данных, чтобы собрать открытку.' });
+  if (!safeRows.length) chart = renderMessage({ theme, width, chartTop: header.chartTop, chartBottom, title: 'нет строк для отображения', detail: 'добавьте строки данных, чтобы собрать открытку.' });
   else if (mode === 'calendar') chart = renderCalendar(payload);
   else if (mode === 'timeline') chart = renderTimeline(payload);
   else if (mode === 'dots') chart = renderDots(payload);
   else chart = renderBars(payload);
   const body = `${baseDefs(theme)}<style>${FONT_CSS}</style><rect width="${width}" height="${height}" fill="${theme.paper}"/><rect width="${width}" height="${height}" fill="url(#paper-lines)"/>${header.markup}<g aria-label="${esc(mode)}">${chart}</g>${renderFooter({ width, height, margin, theme, rows: safeRows, valueKey, unit, mode })}`;
-  const title = safeText(state.title, 'Новая заметка');
-  const caption = safeText(state.caption, 'Маленькая история из ваших строк.');
+  const title = safeText(state.title, 'новая заметка');
+  const caption = safeText(state.caption, 'маленькая история из ваших строк.');
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="scene-title scene-desc"><title id="scene-title">${esc(title)}</title><desc id="scene-desc">${esc(caption)}</desc>${body}</svg>`;
 }

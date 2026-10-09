@@ -3,31 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Data Postcard — field notes in numbers</title>
+    <title>Data Postcard — заметки в числах</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
-    <a class="skip-link" href="#postcard-stage">К открытке</a>
+    <a class="skip-link" href="#postcard-stage">к открытке</a>
 
     <header class="masthead" aria-labelledby="site-title">
       <div class="masthead__brand">
-        <p class="eyebrow">local / data / 01</p>
+        <p class="eyebrow">локальные данные / 01</p>
         <h1 id="site-title">Data Postcard</h1>
       </div>
       <p class="masthead__note">маленькая печатная вещь<br />из ваших строк</p>
     </header>
 
     <main class="app-shell">
-      <section class="stage-column" aria-label="Предпросмотр открытки">
+      <section class="stage-column" aria-label="предпросмотр открытки">
         <div class="stage-heading">
           <p class="eyebrow">открытка</p>
-          <p class="stage-heading__status" id="render-status" aria-live="polite">Пример готов</p>
+          <p class="stage-heading__status" id="render-status" aria-live="polite">пример готов</p>
         </div>
 
-        <section class="postcard-stage" id="postcard-stage" aria-label="Открытка 1200 на 900">
+        <section class="postcard-stage" id="postcard-stage" tabindex="-1" aria-label="открытка 1200 на 900">
           <div class="postcard-paper" id="postcard-paper" data-theme="paper">
             <div class="postcard-paper__header">
-              <p class="postcard-paper__kicker" id="postcard-kicker">Неделя чтения · 07 строк</p>
+              <p class="postcard-paper__kicker" id="postcard-kicker">неделя чтения · 07 наблюдений</p>
               <p class="postcard-paper__date" id="postcard-date">08 / 10 / 2026</p>
             </div>
             <svg
@@ -38,8 +38,8 @@
               viewBox="0 0 1200 900"
               preserveAspectRatio="xMidYMid meet"
             >
-              <title id="scene-title">Предпросмотр открытки</title>
-              <desc id="scene-desc">Визуальное представление выбранного набора данных.</desc>
+              <title id="scene-title">предпросмотр открытки</title>
+              <desc id="scene-desc">визуальное представление выбранного набора данных.</desc>
             </svg>
             <div class="postcard-paper__footer">
               <p class="postcard-paper__source" id="postcard-source">локальная заметка · чтение</p>
@@ -54,10 +54,10 @@
         </div>
       </section>
 
-      <aside class="settings-rail" aria-label="Настройки открытки">
+      <aside class="settings-rail" aria-label="настройки открытки">
         <section class="rail-section rail-section--input" aria-labelledby="input-heading">
           <div class="section-heading">
-            <h2 id="input-heading">Данные</h2>
+            <h2 id="input-heading">данные</h2>
             <span class="section-index">01</span>
           </div>
 
@@ -70,90 +70,90 @@
           >
             <input id="file-input" class="visually-hidden" type="file" tabindex="-1" accept=".csv,.json,text/csv,application/json" />
             <span class="drop-zone__icon" aria-hidden="true">↘</span>
-            <span class="drop-zone__title">Перетащите файл сюда</span>
+            <span class="drop-zone__title">перетащите файл сюда</span>
             <span class="drop-zone__hint" id="drop-help">CSV или JSON, до 20 строк</span>
           </div>
           <button class="text-button" id="import-button" type="button">выбрать файл →</button>
 
           <label class="field-label" for="paste-input">
-            <span>Или вставьте строки</span>
+            <span>или вставьте строки</span>
             <span class="field-label__hint">5–20 строк</span>
           </label>
           <textarea id="paste-input" class="paste-input" rows="4" placeholder="день,минуты&#10;понедельник,32&#10;вторник,48"></textarea>
           <button class="outline-button" id="paste-button" type="button">собрать открытку →</button>
           <p class="input-error" id="data-errors" role="alert" hidden></p>
-          <p class="input-summary" id="data-summary" aria-live="polite">Пример: 7 строк · 2 колонки</p>
+          <p class="input-summary" id="data-summary" aria-live="polite">пример: 7 строк · 2 колонки</p>
         </section>
 
         <section class="rail-section" aria-labelledby="edit-heading">
           <div class="section-heading">
-            <h2 id="edit-heading">Текст</h2>
+            <h2 id="edit-heading">текст</h2>
             <span class="section-index">02</span>
           </div>
-          <label class="field-label" for="title-input">Заголовок</label>
-          <input class="text-input text-input--title" id="title-input" type="text" value="Неделя чтения" autocomplete="off" />
-          <label class="field-label" for="caption-input">Короткая заметка</label>
-          <textarea class="text-input text-input--area" id="caption-input" rows="2">Семь дней, когда у меня нашлось время для книги.</textarea>
-          <label class="field-label" for="unit-input">Единицы</label>
+          <label class="field-label" for="title-input">заголовок</label>
+          <input class="text-input text-input--title" id="title-input" type="text" value="неделя чтения" autocomplete="off" />
+          <label class="field-label" for="caption-input">короткая заметка</label>
+          <textarea class="text-input text-input--area" id="caption-input" rows="2">семь дней, когда у меня нашлось время для книги.</textarea>
+          <label class="field-label" for="unit-input">единицы</label>
           <input class="text-input" id="unit-input" type="text" value="минуты" autocomplete="off" />
         </section>
 
         <section class="rail-section" aria-labelledby="view-heading">
           <div class="section-heading">
-            <h2 id="view-heading">Представление</h2>
+            <h2 id="view-heading">представление</h2>
             <span class="section-index">03</span>
           </div>
           <div class="control-grid">
-            <label class="field-label" for="mode-select">Представление</label>
+            <label class="field-label" for="mode-select">представление</label>
             <select class="select-input" id="mode-select">
-              <option value="bars">Полосы</option>
-              <option value="dots">Точки</option>
-              <option value="calendar">Календарная сетка</option>
-              <option value="timeline">Временной маршрут</option>
+              <option value="bars">полосы</option>
+              <option value="dots">точки</option>
+              <option value="calendar">календарная сетка</option>
+              <option value="timeline">временной маршрут</option>
             </select>
 
-            <label class="field-label" for="order-select">Порядок</label>
+            <label class="field-label" for="order-select">порядок</label>
             <select class="select-input" id="order-select">
-              <option value="input">Как в источнике</option>
-              <option value="ascending">От меньшего</option>
-              <option value="descending">От большего</option>
+              <option value="input">как в источнике</option>
+              <option value="ascending">от меньшего</option>
+              <option value="descending">от большего</option>
             </select>
           </div>
           <div class="control-grid control-grid--columns">
-            <label class="field-label" for="category-select">Подписи</label>
-            <select class="select-input" id="category-select" aria-label="Колонка подписей">
+            <label class="field-label" for="category-select">подписи</label>
+            <select class="select-input" id="category-select" aria-label="колонка подписей">
               <option value="day">день</option>
             </select>
-            <label class="field-label" for="value-select">Значения</label>
-            <select class="select-input" id="value-select" aria-label="Колонка значений">
+            <label class="field-label" for="value-select">значения</label>
+            <select class="select-input" id="value-select" aria-label="колонка значений">
               <option value="minutes">минуты</option>
             </select>
-            <label class="field-label" for="date-select">Дата</label>
-            <select class="select-input" id="date-select" aria-label="Колонка дат">
+            <label class="field-label" for="date-select">дата</label>
+            <select class="select-input" id="date-select" aria-label="колонка дат">
               <option value="">не используется</option>
             </select>
           </div>
           <label class="check-row" for="missing-toggle">
             <input id="missing-toggle" type="checkbox" checked />
-            <span>Показывать пустые значения</span>
+            <span>показывать пустые значения</span>
           </label>
         </section>
 
         <section class="rail-section" aria-labelledby="tone-heading">
           <div class="section-heading">
-            <h2 id="tone-heading">Палитра и формат</h2>
+            <h2 id="tone-heading">палитра и формат</h2>
             <span class="section-index">04</span>
           </div>
           <div class="control-grid">
-            <label class="field-label" for="theme-select">Тема</label>
+            <label class="field-label" for="theme-select">тема</label>
             <select class="select-input" id="theme-select">
-              <option value="night">Ночной атлас</option>
-              <option value="paper">Бумажная статистика</option>
-              <option value="court">Спортплощадка</option>
-              <option value="archive">Архив</option>
-              <option value="ink">Чёрно-белая печать</option>
+              <option value="night">ночной атлас</option>
+              <option value="paper">бумажная статистика</option>
+              <option value="court">спортплощадка</option>
+              <option value="archive">архив</option>
+              <option value="ink">чёрно-белая печать</option>
             </select>
-            <label class="field-label" for="size-select">Формат</label>
+            <label class="field-label" for="size-select">формат</label>
             <select class="select-input" id="size-select">
               <option value="landscape">1200 × 900</option>
               <option value="stories">Stories · 1080 × 1920</option>
@@ -163,10 +163,10 @@
 
         <section class="rail-section rail-section--samples" aria-labelledby="sample-heading">
           <div class="section-heading">
-            <h2 id="sample-heading">Примеры</h2>
+            <h2 id="sample-heading">примеры</h2>
             <span class="section-index">05</span>
           </div>
-          <div class="sample-list" role="list" aria-label="Встроенные наборы данных">
+          <div class="sample-list" role="list" aria-label="встроенные наборы данных">
             <button class="sample-button" type="button" data-sample="reading"><span>01</span> чтение</button>
             <button class="sample-button" type="button" data-sample="weather"><span>02</span> погода</button>
             <button class="sample-button" type="button" data-sample="sport"><span>03</span> спорт</button>
@@ -175,7 +175,7 @@
 
         <section class="rail-section rail-section--export" aria-labelledby="export-heading">
           <div class="section-heading">
-            <h2 id="export-heading">Сохранить</h2>
+            <h2 id="export-heading">сохранить</h2>
             <span class="section-index">06</span>
           </div>
           <div class="export-list">
@@ -183,7 +183,7 @@
             <button class="export-button" id="export-svg" type="button" disabled><span>SVG</span><small>вектор</small></button>
             <button class="export-button" id="export-html" type="button" disabled><span>HTML</span><small>автономная страница</small></button>
           </div>
-          <p class="privacy-note"><span aria-hidden="true">⌁</span> Данные остаются в этом браузере.</p>
+          <p class="privacy-note"><span aria-hidden="true">⌁</span> данные остаются в этом браузере.</p>
         </section>
       </aside>
     </main>
