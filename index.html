@@ -4,7 +4,7 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Data Postcard — заметки в числах</title>
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css?v=20261009" />
   </head>
   <body>
     <a class="skip-link" href="#postcard-stage">к открытке</a>
@@ -66,9 +66,10 @@
             id="drop-zone"
             tabindex="0"
             role="button"
+            aria-label="перетащите CSV или JSON-файл сюда"
             aria-describedby="drop-help data-errors"
           >
-            <input id="file-input" class="visually-hidden" type="file" tabindex="-1" accept=".csv,.json,text/csv,application/json" />
+            <input id="file-input" class="visually-hidden" type="file" tabindex="-1" aria-label="выберите CSV или JSON-файл" accept=".csv,.json,text/csv,application/json" />
             <span class="drop-zone__icon" aria-hidden="true">↘</span>
             <span class="drop-zone__title">перетащите файл сюда</span>
             <span class="drop-zone__hint" id="drop-help">CSV или JSON · 5–20 строк · до 1 МБ</span>
@@ -193,6 +194,6 @@
       <p>файл не покидает браузер <span aria-hidden="true">·</span> без аккаунта</p>
     </footer>
 
-    <script type="module" src="src/app.js"></script>
+    <script type="module" src="src/app.js?v=20261009"></script>
   </body>
 </html>

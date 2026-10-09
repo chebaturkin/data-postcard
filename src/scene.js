@@ -1,4 +1,4 @@
-import { parseDate, parseNumber } from './data.js';
+import { parseDate, parseNumber } from './data.js?v=20261009';
 import { THEMES } from './themes.js';
 
 const esc = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));

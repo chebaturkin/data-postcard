@@ -101,7 +101,8 @@ test('parseCsv treats whitespace-only input as empty', () => {
 test('parseText blocks datasets that do not meet the row-count contract', () => {
   const result = parseText('name,score\nA,1\nB,2\nC,3\nD,4', 'scores.csv');
   assert.equal(result.dataset, null);
-  assert.ok(result.errors.some((error) => error.code === 'row-count'));
+  const rowCountError = result.errors.find((error) => error.code === 'row-count');
+  assert.equal(rowCountError.message, 'нужно минимум 5 строк; найдено 4.');
 });
 
 test('parseText blocks invalid inferred number and date values', () => {

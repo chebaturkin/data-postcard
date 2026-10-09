@@ -1,7 +1,7 @@
-import { parseText, inferColumns, parseNumber } from './data.js';
-import { buildScene } from './scene.js';
+import { parseText, inferColumns, parseNumber } from './data.js?v=20261009';
+import { buildScene } from './scene.js?v=20261009';
 import { exportSvg, exportPng, exportStandaloneHtml, sanitizeFilename } from './export.js';
-import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, fileImportError } from './app-state.js';
+import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, fileImportError } from './app-state.js?v=20261009';
 
 const SAMPLES = {
   reading: { label: 'sample reading', title: 'неделя чтения', caption: 'семь дней, когда у меня нашлось время для книги.', unit: 'минуты', headers: ['день', 'минуты'], rows: [['понедельник', 32], ['вторник', 48], ['среда', 26], ['четверг', 61], ['пятница', 42], ['суббота', 76], ['воскресенье', 53]] },

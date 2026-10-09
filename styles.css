@@ -1,7 +1,7 @@
 :root {
-  --font-display: "Iowan Old Style", "Baskerville", "Times New Roman", serif;
-  --font-sans: "Avenir Next", "Helvetica Neue", Helvetica, sans-serif;
-  --font-mono: Menlo, "SFMono-Regular", Consolas, monospace;
+  --font-display: "Literata", Georgia, "Times New Roman", serif;
+  --font-sans: "Golos Text", "Trebuchet MS", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "Golos Text", Menlo, monospace;
   --bg: #e6e1d7;
   --paper: #f7f3e8;
   --ink: #252b21;
@@ -46,28 +46,31 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .visually-hidden { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .skip-link { position: fixed; z-index: 10; top: 8px; left: 8px; padding: 8px 12px; color: var(--paper); background: var(--ink); transform: translateY(-150%); transition: transform .15s ease; }
 .skip-link:focus { transform: translateY(0); }
+.postcard-stage { scroll-margin-top: 24px; }
 
 .masthead, .app-shell, .site-footer { width: min(1480px, calc(100% - 72px)); margin-inline: auto; }
 .masthead { display: flex; align-items: end; justify-content: space-between; padding: 22px 0 18px; border-bottom: 1px solid var(--line); }
 .masthead__brand { display: flex; align-items: baseline; gap: 16px; }
 .masthead__brand h1 { margin: 2px 0 0; font-family: var(--font-display); font-weight: 600; font-size: clamp(1.65rem, 3vw, 2.55rem); letter-spacing: -.02em; line-height: 1; }
-.masthead__note { margin: 0 3px 2px 20px; color: var(--muted); font-size: 11px; line-height: 1.35; letter-spacing: .04em; text-align: right; text-transform: uppercase; }
-.eyebrow { margin: 0; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .16em; line-height: 1.3; text-transform: uppercase; }
+.masthead__note { margin: 0 3px 2px 20px; color: var(--muted); font-size: 11px; line-height: 1.35; letter-spacing: .04em; text-align: right; }
+.eyebrow { margin: 0; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .12em; line-height: 1.3; }
 
 .app-shell { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: clamp(28px, 5vw, 72px); align-items: start; padding: 28px 0 56px; }
 .stage-column { min-width: 0; }
 .stage-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 20px; margin-bottom: 12px; }
-.stage-heading__status { margin: 0; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .12em; text-transform: uppercase; }
+.stage-heading__status { margin: 0; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; }
 .postcard-stage { position: relative; width: 100%; padding: 10px; border: 1px solid var(--line); background: transparent; box-shadow: 5px 6px 0 var(--shadow); }
 .postcard-paper { position: relative; aspect-ratio: 4 / 3; overflow: hidden; color: var(--ink); background: var(--paper); background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='70' height='70' viewBox='0 0 70 70'%3E%3Cpath d='M0 12H70M0 58H70' stroke='%23000000' stroke-opacity='.035'/%3E%3Ccircle cx='18' cy='34' r='1' fill='%23000000' fill-opacity='.035'/%3E%3Ccircle cx='53' cy='4' r='.8' fill='%23000000' fill-opacity='.03'/%3E%3C/svg%3E"); }
 .postcard-paper__header, .postcard-paper__footer { position: absolute; z-index: 2; right: 4.6%; left: 4.6%; display: flex; align-items: baseline; justify-content: space-between; gap: 12px; }
 .postcard-paper__header { top: 4.2%; }
 .postcard-paper__footer { bottom: 4.8%; border-top: 1px solid var(--line); padding-top: 8px; }
-.postcard-paper__kicker, .postcard-paper__date, .postcard-paper__source, .postcard-paper__mark { margin: 0; font-family: var(--font-mono); font-size: clamp(8px, .62vw, 10px); letter-spacing: .08em; line-height: 1.2; text-transform: uppercase; }
+.postcard-paper__kicker, .postcard-paper__date, .postcard-paper__source, .postcard-paper__mark { margin: 0; font-family: var(--font-mono); font-size: clamp(8px, .62vw, 10px); letter-spacing: .08em; line-height: 1.2; }
+.postcard-paper__kicker, .postcard-paper__source { min-width: 0; overflow-wrap: anywhere; }
+.postcard-paper__date, .postcard-paper__mark { flex: 0 0 auto; }
 .postcard-paper__kicker, .postcard-paper__mark { color: var(--accent); }
 .postcard-paper__date, .postcard-paper__source { color: var(--muted); }
 .postcard-preview { display: block; width: 100%; height: 100%; }
-.stage-footnote { display: flex; justify-content: space-between; gap: 16px; padding-top: 10px; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .06em; text-transform: uppercase; }
+.stage-footnote { display: flex; justify-content: space-between; gap: 16px; padding-top: 10px; color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em; }
 .stage-footnote p { margin: 0; }
 .key-line { display: inline-block; width: 21px; height: 1px; margin-right: 5px; vertical-align: middle; background: var(--accent); }
 
@@ -82,8 +85,8 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .drop-zone__icon { display: block; margin-bottom: 3px; color: var(--accent); font-family: var(--font-display); font-size: 24px; line-height: 1; }
 .drop-zone__title { font-family: var(--font-display); font-size: 16px; }
 .drop-zone__hint, .field-label__hint { color: var(--muted); font-size: 11px; }
-.text-button { display: block; min-height: 44px; margin: 7px 0 12px auto; padding: 10px 0 7px; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .07em; text-transform: uppercase; }
-.field-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 11px 0 5px; font-size: 10px; letter-spacing: .04em; text-transform: uppercase; }
+.text-button { display: block; min-height: 44px; margin: 7px 0 12px auto; padding: 10px 0 7px; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .05em; }
+.field-label { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin: 11px 0 5px; font-size: 11px; letter-spacing: .02em; }
 .field-label:first-of-type { margin-top: 0; }
 .paste-input, .text-input, .select-input { width: 100%; border: 1px solid var(--line); border-radius: 0; background: var(--surface-input); }
 .paste-input, .text-input { padding: 9px 10px; }
@@ -92,7 +95,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .text-input--title { font-family: var(--font-display); font-size: 18px; }
 .text-input--area { resize: vertical; line-height: 1.35; }
 .select-input { min-height: 38px; padding: 6px 8px; }
-.outline-button { width: auto; min-height: 44px; margin-top: 6px; padding: 10px 0 7px; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .08em; text-align: left; text-transform: uppercase; }
+.outline-button { width: auto; min-height: 44px; margin-top: 6px; padding: 10px 0 7px; border: 0; border-bottom: 1px solid currentColor; background: transparent; color: var(--accent); font-family: var(--font-mono); font-size: 10px; letter-spacing: .06em; text-align: left; }
 .outline-button:hover, .outline-button:focus-visible { color: var(--ink); }
 .input-summary { margin: 9px 0 0; color: var(--muted); font-family: var(--font-mono); font-size: 10px; }
 .input-error { margin: 9px 0 0; padding: 8px; border-left: 2px solid var(--accent); color: var(--accent); font-size: 12px; }
@@ -111,7 +114,7 @@ button:disabled { cursor: not-allowed; opacity: .45; }
 .export-button small { color: var(--muted); font-size: 9px; }
 .privacy-note { margin: 12px 0 0; color: var(--muted); font-family: var(--font-mono); font-size: 9px; }
 .privacy-note span { color: var(--accent); font-size: 16px; vertical-align: -1px; }
-.site-footer { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em; text-transform: uppercase; }
+.site-footer { display: flex; justify-content: space-between; gap: 20px; padding: 12px 0 24px; border-top: 1px solid var(--line); color: var(--muted); font-family: var(--font-mono); font-size: 9px; letter-spacing: .04em; }
 .site-footer p { margin: 0; }
 
 html[data-size="stories"] .postcard-paper { width: min(100%, 430px); aspect-ratio: 9 / 16; margin-inline: auto; }
