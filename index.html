@@ -3,16 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="data postcard — редактор небольших графиков для постов, отчётов и личных итогов. внесите цифры, выберите оформление и скачайте открытку. данные остаются в браузере." />
+    <meta name="description" content="data postcard: редактор небольших графиков для постов, отчётов и личных итогов. внесите цифры, выберите оформление и скачайте открытку. данные остаются в браузере." />
     <meta name="theme-color" content="#f5f2ec" />
-    <title>data postcard — график для поста или отчёта</title>
+    <title>data postcard: график для поста или отчёта</title>
     <link rel="icon" href="assets/favicon.svg?v=20261014b" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css?v=20261014c" />
   </head>
   <body>
     <a class="skip-link" href="#editor">к редактору</a>
     <header class="masthead">
-      <a class="brand" href="./" aria-label="data postcard — на главную">
+      <a class="brand" href="./" aria-label="data postcard, на главную">
         <img class="brand-mark" src="assets/logo.svg" width="48" height="40" alt="" />
         <span>data postcard</span>
       </a>
@@ -59,7 +59,7 @@
           <section id="panel-data" class="tab-panel" role="tabpanel" aria-labelledby="tab-data">
             <p class="panel-help">замените подписи и значения в таблице. можно добавить от 2 до 20 строк.</p>
             <div class="data-table-wrap"><table id="data-table" class="data-table"><caption class="visually-hidden">редактирование данных открытки</caption><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
-            <p id="table-scroll-hint" class="table-scroll-hint" hidden>таблица продолжается справа — прокрутите её по горизонтали.</p><div class="table-actions"><button class="text-button" id="add-row" type="button">+ добавить строку</button><span id="data-summary"></span></div>
+            <p id="table-scroll-hint" class="table-scroll-hint" hidden>таблица продолжается справа. прокрутите её по горизонтали.</p><div class="table-actions"><button class="text-button" id="add-row" type="button">+ добавить строку</button><span id="data-summary"></span></div>
             <button class="primary-button apply-button" id="apply-table" type="button">обновить открытку</button>
             <p class="field-hint pending-note" id="table-status" role="status" hidden></p><p class="input-error" id="data-errors" role="alert" hidden></p><p class="input-warning" id="data-warnings" role="status" hidden></p>
             <details class="import-details" id="import-details">
@@ -72,7 +72,7 @@
                 <button class="text-button" id="import-button" type="button">выбрать файл</button>
                 <label class="field-label" for="paste-input">или скопируйте ячейки из таблицы</label>
                 <textarea id="paste-input" class="paste-input" rows="4" placeholder="день&#9;минуты&#10;понедельник&#9;32&#10;вторник&#9;48" aria-describedby="paste-help"></textarea>
-                <p class="field-hint" id="paste-help">первая строка — названия колонок. подойдут csv, json или ячейки из excel и google sheets.</p>
+                <p class="field-hint" id="paste-help">в первой строке нужны названия колонок. подойдут csv, json или ячейки из excel и google sheets.</p>
                 <button class="secondary-button" id="paste-button" type="button">использовать эти данные</button>
               </div>
             </details>
@@ -88,7 +88,7 @@
 
           <section id="panel-design" class="tab-panel" role="tabpanel" aria-labelledby="tab-design" hidden>
             <p class="input-error" id="graph-error" role="status" hidden></p><fieldset class="mode-group"><legend>сравнить значения</legend><label><input type="radio" name="graph-mode" value="bars" checked> полосы</label><label><input type="radio" name="graph-mode" value="dots"> точки</label></fieldset><fieldset class="mode-group"><legend>показать по датам</legend><label><input type="radio" name="graph-mode" value="timeline"> линия</label><label><input type="radio" name="graph-mode" value="calendar"> календарь</label></fieldset>
-            <select class="select-input visually-hidden" id="mode-select" tabindex="-1" aria-hidden="true"><option value="bars">полосы — сравнить значения</option><option value="dots">точки — сравнить значения</option><option value="timeline">линия — изменения по датам</option><option value="calendar">календарь — записи по дням</option></select>
+            <select class="select-input visually-hidden" id="mode-select" tabindex="-1" aria-hidden="true"><option value="bars">полосы: сравнить значения</option><option value="dots">точки: сравнить значения</option><option value="timeline">линия: изменения по датам</option><option value="calendar">календарь: записи по дням</option></select>
             <label class="field-label" for="summary-select">итог на открытке</label>
             <select class="select-input" id="summary-select"><option value="total">сумма значений</option><option value="average">среднее значение</option><option value="none">без итога</option></select>
             <label class="field-label" for="order-select">порядок строк</label>

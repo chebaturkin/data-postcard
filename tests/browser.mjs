@@ -162,6 +162,9 @@ try {
   await page.locator('#reset-draft').click();
 
   if (screenshots) {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.waitForLoadState('networkidle');
     await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await page.screenshot({ path: root + 'docs/images/editor.png', fullPage: true, animations: 'disabled' });
     for (const sample of ['expenses', 'content']) {
@@ -180,6 +183,11 @@ try {
   await page.evaluate(() => localStorage.setItem('data-postcard-draft-v1', '{broken'));
   await page.reload();
   check(await page.locator('#table-body tr').count() === 7, 'corrupt storage falls back to a usable example');
+  if (screenshots) {
+    await page.evaluate(() => localStorage.clear());
+    await page.reload();
+    await page.waitForLoadState('networkidle');
+  }
   for (const width of [320, 390, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
     check(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), `no page overflow at ${width}px`);

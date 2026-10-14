@@ -10,7 +10,7 @@ const nf = new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1});
 const scientific = new Intl.NumberFormat('ru-RU',{notation:'scientific',maximumFractionDigits:3});
 // Avoid a forty-character value column or a non-zero value labelled as zero.
 // Exact source values remain in each mark's title and the accessible description.
-const fmt = value => value === null ? '—' : (Math.abs(value)>=1e12 || (value!==0 && Math.abs(value)<.05) ? scientific.format(value).replace('E','e') : nf.format(value));
+const fmt = value => value === null ? '-' : (Math.abs(value)>=1e12 || (value!==0 && Math.abs(value)<.05) ? scientific.format(value).replace('E','e') : nf.format(value));
 const date = value => { const d=parseDate(value); return d ? new Date(d instanceof Date ? d : `${d}T00:00:00Z`) : null; };
 const iso = d => d.toISOString().slice(0,10);
 const shortDate = d => new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',timeZone:'UTC'}).format(d).replace('.','');
@@ -146,7 +146,7 @@ function datedRows(c) {return c.rows.map((row,index)=>({row,index,date:date(row[
 function renderRegister(c,entries,top,bottom,attribute='data-calendar-layout="register"') {
   const cols=c.stories?1:(bottom-top<360 && entries.length>12 && entries.every(e=>e.value!==null) ? 3 : 2),count=Math.ceil(entries.length/cols),gap=38,block=(c.width-c.margin*2-gap*(cols-1))/cols;
   let size=c.stories?36:27;
-  const rowLabels=()=>entries.map(e=>`${e.date?iso(e.date):'без даты'} · ${e.value===null ? clean(e.row[c.valueKey])||'—' : fmt(e.value)}`);
+  const rowLabels=()=>entries.map(e=>`${e.date?iso(e.date):'без даты'} · ${e.value===null ? clean(e.row[c.valueKey])||'-' : fmt(e.value)}`);
   let wrapped=rowLabels().map(v=>wrap(v,block,size));
   const needed=()=>Array.from({length:cols},(_,col)=>wrapped.slice(col*count,(col+1)*count).reduce((n,l)=>n+Math.max(1,l.length),0));
   while(Math.max(...needed())*size*1.3+count*8>bottom-top&&size>18) {size--;wrapped=rowLabels().map(v=>wrap(v,block,size));}
@@ -167,7 +167,7 @@ function renderCalendar(c,h,bottom) {
   const day=86400000,span=Math.round((last-first)/day);
   const occupiedWeeks=Math.ceil((span+(first.getUTCDay()+6)%7+1)/7);
   const register=span>34||duplicates||dated.some(e=>e.value===null&&clean(e.row[c.valueKey]))||undated.length||(bottom-h.chartTop-78)/occupiedWeeks<100;
-  let out=text(c.margin,h.chartTop+25,first.getUTCMonth()===last.getUTCMonth()&&first.getUTCFullYear()===last.getUTCFullYear()?monthDate(first):`${iso(first)} — ${iso(last)}`,style(c.theme,c.stories?34:28,{class:'literata'}));
+  let out=text(c.margin,h.chartTop+25,first.getUTCMonth()===last.getUTCMonth()&&first.getUTCFullYear()===last.getUTCFullYear()?monthDate(first):`${iso(first)} / ${iso(last)}`,style(c.theme,c.stories?34:28,{class:'literata'}));
   if(c.unit) out+=text(c.width-c.margin,h.chartTop+25,c.unit,style(c.theme,24,{'text-anchor':'end',fill:c.theme.muted}));
   if(register) {
     if(undated.length) out+=text(c.margin,bottom-2,`без корректной даты · ${undated.length} ${plural(undated.length)}`,style(c.theme,22,{fill:c.theme.muted}));
