@@ -1,5 +1,5 @@
 /**
- * Small, dependency-free data parser for Data Postcard.
+ * Small, dependency-free data parser for data postcard.
  *
  * The module deliberately keeps the raw values around. `parseText` returns a
  * validated dataset whose `rows` contain typed values (numbers, ISO date
@@ -7,7 +7,7 @@
  * they appeared in the source file.
  */
 
-const MIN_ROWS = 5;
+const MIN_ROWS = 2;
 const MAX_ROWS = 20;
 
 const BLOCKING_ERROR_CODES = new Set([
@@ -86,8 +86,24 @@ function rowLength(row) {
   return Array.isArray(row) ? row.length : (isObject(row) ? Object.keys(row).length : 0);
 }
 
+function detectDelimiter(text) {
+  const counts = new Map([[',', 0], [';', 0], ['\t', 0]]);
+  let quoted = false;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (char === '"') {
+      if (quoted && text[index + 1] === '"') { index += 1; continue; }
+      quoted = !quoted;
+    }
+    if (!quoted && /[\r\n]/.test(char)) break;
+    if (!quoted && counts.has(char)) counts.set(char, counts.get(char) + 1);
+  }
+  return [...counts].sort((a, b) => b[1] - a[1])[0][0];
+}
+
 function parseCsvRows(text) {
   const source = String(text ?? '').replace(/^\uFEFF/, '');
+  const delimiter = detectDelimiter(source);
   const matrix = [];
   let row = [];
   let field = '';
@@ -115,7 +131,7 @@ function parseCsvRows(text) {
     if (char === '"' && field.length === 0) {
       quoted = true;
       justClosedQuote = false;
-    } else if (char === ',') {
+    } else if (char === delimiter) {
       row.push(field);
       field = '';
       justClosedQuote = false;
@@ -153,7 +169,7 @@ function parseCsvRows(text) {
   }
 
   if (quoted) {
-    errors.push(issue('csv-parse', 'кавычки в CSV не закрыты.', { row: matrix.length + 1, column: row.length + 1 }));
+    errors.push(issue('csv-parse', 'кавычки в csv не закрыты.', { row: matrix.length + 1, column: row.length + 1 }));
     return { matrix, errors, malformed: true };
   }
 
@@ -233,7 +249,7 @@ export function parseJson(text) {
   } catch (error) {
     return {
       headers: [], rows: [], rowLengths: [],
-      errors: [issue('invalid-json', `JSON не удалось прочитать: ${error.message}`)], warnings: []
+      errors: [issue('invalid-json', `json не удалось прочитать: ${error.message}`)], warnings: []
     };
   }
 
@@ -244,17 +260,17 @@ export function parseJson(text) {
     if (arrayEntries.length === 0) {
       return {
         headers: [], rows: [], rowLengths: [],
-        errors: [issue('invalid-json-shape', 'JSON должен быть массивом объектов или объектом с массивом строк.')], warnings
+        errors: [issue('invalid-json-shape', 'json должен быть массивом объектов или объектом с массивом строк.')], warnings
       };
     }
     rows = arrayEntries[0][1];
     if (arrayEntries.length > 1) {
-      warnings.push(issue('multiple-arrays', `в JSON найдено несколько массивов; использован «${arrayEntries[0][0]}».`, { field: arrayEntries[0][0] }));
+      warnings.push(issue('multiple-arrays', `в json найдено несколько массивов; использован «${arrayEntries[0][0]}».`, { field: arrayEntries[0][0] }));
     }
   }
 
   if (!Array.isArray(rows)) {
-    return { headers: [], rows: [], rowLengths: [], errors: [issue('invalid-json-shape', 'JSON должен быть массивом объектов.')], warnings };
+    return { headers: [], rows: [], rowLengths: [], errors: [issue('invalid-json-shape', 'json должен быть массивом объектов.')], warnings };
   }
 
   const errors = [];
@@ -269,7 +285,7 @@ export function parseJson(text) {
   const sourceHeaders = rawHeaders.map(cleanHeader);
   const headers = stableHeaderKeys(sourceHeaders);
   if (sourceHeaders.length === 0 && objectRows.length > 0) {
-    errors.push(issue('missing-header', 'в JSON не найдено ни одной колонки.'));
+    errors.push(issue('missing-header', 'в json не найдено ни одной колонки.'));
   }
   const cleanedRows = objectRows.map((row) => {
     const cleaned = {};
@@ -481,7 +497,7 @@ export function validateDataset(headersOrDataset, maybeRows) {
   }
 
   if (!isEmpty && sourceRows.length < MIN_ROWS) {
-    errors.push(issue('row-count', `нужно минимум ${MIN_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
+    errors.push(issue('row-count', `нужно минимум ${MIN_ROWS} строки; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   } else if (sourceRows.length > MAX_ROWS) {
     errors.push(issue('row-count', `можно использовать максимум ${MAX_ROWS} строк; найдено ${sourceRows.length}.`, { min: MIN_ROWS, max: MAX_ROWS, actual: sourceRows.length }));
   }

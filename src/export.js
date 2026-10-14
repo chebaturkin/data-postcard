@@ -136,17 +136,17 @@ export function exportPng(svgText, width, height, filename = 'data-postcard.png'
   });
 }
 
-export function standaloneHtml(svgText, title = 'Data Postcard', metadata = {}) {
+export function standaloneHtml(svgText, title = 'data postcard', metadata = {}) {
   const safeSvgText = requireSvgMarkup(svgText);
   const safeTitle = String(title ?? '').replace(/[<&>\"']/g, '');
   const embedded = (JSON.stringify(metadata ?? {}) ?? '{}')
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026');
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html,body{margin:0;background:#d9d4c8;min-height:100%;display:grid;place-items:center}svg{display:block;max-width:100vw;max-height:100vh;height:auto;box-shadow:8px 10px 0 rgba(0,0,0,.16)}</style></head><body>${safeSvgText}<script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html,body{margin:0;background:#f5f2ec;min-height:100%;display:grid;place-items:center}svg{display:block;max-width:100vw;max-height:100vh;height:auto;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.12)}</style></head><body>${safeSvgText}<script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
 }
 
-export function exportStandaloneHtml(svgText, title = 'Data Postcard', filename = 'data-postcard.html', metadata = {}) {
+export function exportStandaloneHtml(svgText, title = 'data postcard', filename = 'data-postcard.html', metadata = {}) {
   const html = standaloneHtml(svgText, title, metadata);
   return downloadBlob(
     new Blob([html], { type: 'text/html;charset=utf-8' }),

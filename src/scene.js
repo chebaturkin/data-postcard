@@ -1,4 +1,4 @@
-import { parseDate, parseNumber } from './data.js?v=20261009';
+import { parseDate, parseNumber } from './data.js';
 import { THEMES } from './themes.js';
 
 const esc = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
@@ -106,9 +106,9 @@ function metricSummary(rows, valueKey, unit) {
 
 function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
   const stories = width < 1100;
-  const summary = metricSummary(rows, valueKey, unit);
+  const summary = state.summary === 'none' ? null : metricSummary(rows, valueKey, unit);
   const summaryWidth = stories ? 270 : 250;
-  const titleWidth = width - margin * 2 - summaryWidth - 26;
+  const titleWidth = width - margin * 2 - (summary ? summaryWidth + 26 : 0);
   const titleChars = clamp(Math.floor(titleWidth / (stories ? 27 : 30)), 18, 34);
   const titleLines = wrapText(state.title, titleChars, 2);
   const titleY = stories ? 154 : 112;
@@ -128,21 +128,15 @@ function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
     class: 'golos', fill: theme.muted, 'font-size': stories ? 19 : 18, 'font-weight': 400,
   }, captionLineHeight);
   if (summary) {
-    output += text(summaryX, titleY - 6, `${summary.count} наблюдений`, {
-      class: 'golos', fill: theme.muted, 'font-size': 13, 'text-anchor': 'start',
+    output += text(right, titleY - 10, state.summary === 'average' ? 'в среднем' : 'всего', {
+      class: 'golos', fill: theme.muted, 'font-size': 18, 'text-anchor': 'end',
     });
-    output += text(right, titleY + 28, `Σ ${formatValue(summary.total, unit)}`, {
-      class: 'mono', fill: theme.ink, 'font-size': 20, 'font-weight': 600, 'text-anchor': 'end',
-    });
-    output += text(right, titleY + 56, `μ ${formatValue(summary.mean, unit)}`, {
-      class: 'mono', fill: theme.accent, 'font-size': 15, 'text-anchor': 'end',
+    output += text(right, titleY + 28, formatValue(state.summary === 'average' ? summary.mean : summary.total, unit), {
+      class: 'mono', fill: theme.accent, 'font-size': 30, 'font-weight': 600, 'text-anchor': 'end',
     });
   }
   output += `<line x1="${margin}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${theme.line}" stroke-width="1"/>`;
-  if (safeText(unit)) output += text(margin, ruleY + 27, `единица · ${safeText(unit)}`, {
-    class: 'mono', fill: theme.accent, 'font-size': 12, 'letter-spacing': '.6',
-  });
-  return { markup: output, chartTop: ruleY + (safeText(unit) ? 56 : 35) };
+  return { markup: output, chartTop: ruleY + 35 };
 }
 
 function axisTicks(min, max, count = 4) {
@@ -181,7 +175,7 @@ function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
   const rowHeight = (bottom - top) / Math.max(rows.length, 1);
   const barHeight = clamp(rowHeight * 0.48, width < 1100 ? 9 : 8, width < 1100 ? 36 : 26);
   const zeroX = plotLeft + ((0 - min) / span) * (plotRight - plotLeft);
-  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: width < 1100 ? 11 : 10 });
+  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: 15 });
   output += `<line x1="${zeroX}" y1="${top - 5}" x2="${zeroX}" y2="${bottom + 5}" stroke="${theme.ink}" stroke-width="1.2"/>`;
   rows.forEach((row, index) => {
     const value = values[index];
@@ -190,21 +184,21 @@ function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
     const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
     output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" opacity=".65"/>`;
     output += text(margin, centerY + clamp(rowHeight * .26, 5, 8), category, {
-      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .54, 10, 15),
+      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .54, 12, 23),
     });
     if (value === null) {
       const missingWidth = clamp(rowHeight * .7, 16, 28);
-      output += `<rect x="${zeroX - missingWidth / 2}" y="${y}" width="${missingWidth}" height="${barHeight}" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width="1"/>`;
+      output += `<rect x="${zeroX - missingWidth / 2}" y="${y}" width="${missingWidth}" height="${barHeight}" rx="${barHeight / 2}" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width="1"/>`;
       output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), '—', {
-        class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end',
+        class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end',
       });
       return;
     }
     const barWidth = (Math.abs(value) / span) * (plotRight - plotLeft);
     const x = value < 0 ? zeroX - barWidth : zeroX;
-    output += `<rect x="${x}" y="${y}" width="${Math.max(barWidth, value === 0 ? 1.5 : 0)}" height="${barHeight}" fill="${theme.accent}"/>`;
+    output += `<rect x="${x}" y="${y}" width="${Math.max(barWidth, value === 0 ? 1.5 : 0)}" height="${barHeight}" rx="${barHeight / 2}" fill="${theme.accent}"/>`;
     output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), formatValue(value, unit), {
-      class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end',
+      class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end',
     });
   });
   return output;
@@ -225,23 +219,23 @@ function renderDots({ rows, categoryKey, valueKey, unit, theme, width, chartTop,
   const bottom = Math.max(top + 20, chartBottom - 10);
   const rowHeight = (bottom - top) / Math.max(rows.length, 1);
   const radius = clamp(rowHeight * .17, 4, width < 1100 ? 9 : 7);
-  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: width < 1100 ? 11 : 10 });
+  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: 15 });
   rows.forEach((row, index) => {
     const value = values[index];
     const centerY = top + index * rowHeight + rowHeight / 2;
     const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
     output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="1 8"/>`;
     output += text(margin, centerY + clamp(rowHeight * .22, 5, 8), category, {
-      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15),
+      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23),
     });
     if (value === null) {
       output += `<line x1="${plotLeft - 5}" y1="${centerY - radius}" x2="${plotLeft + 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/><line x1="${plotLeft + 5}" y1="${centerY - radius}" x2="${plotLeft - 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/>`;
-      output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), '—', { class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end' });
+      output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), '—', { class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end' });
       return;
     }
     const x = plotLeft + ((value - min) / span) * (plotRight - plotLeft);
     output += `<circle cx="${x}" cy="${centerY}" r="${radius}" fill="${theme.accent}" stroke="${theme.paper}" stroke-width="2"/>`;
-    output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), formatValue(value, unit), { class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 10, 15), 'text-anchor': 'end' });
+    output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), formatValue(value, unit), { class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end' });
   });
   return output;
 }
@@ -277,7 +271,7 @@ function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop,
     return Math.ceil((offset + new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate()) / 7);
   }));
   const availableHeight = Math.max(110, chartBottom - chartTop - rowsOfBlocks * 35 - (rowsOfBlocks - 1) * gap);
-  const cellHeight = clamp(availableHeight / (rowsOfBlocks * maxWeeks), stories ? 18 : 14, stories ? 48 : 30);
+  const cellHeight = clamp(availableHeight / (rowsOfBlocks * maxWeeks), stories ? 18 : 14, stories ? 100 : 58);
   const cellWidth = (blockWidth - 8) / 7;
   const blockHeight = 33 + maxWeeks * cellHeight;
   const weekdays = ['п', 'в', 'с', 'ч', 'п', 'с', 'в'];
@@ -379,7 +373,7 @@ function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop,
   axisTicks(min, max, 4).forEach((tick) => {
     const y = yFor(tick);
     output += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="2 8"/>`;
-    output += text(margin, y + 4, formatNumber(tick), { class: 'mono', fill: theme.muted, 'font-size': width < 1100 ? 11 : 10 });
+    output += text(margin, y + 4, formatNumber(tick), { class: 'mono', fill: theme.muted, 'font-size': 17 });
   });
   output += `<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="${theme.ink}" stroke-width="1.2"/>`;
   let segment = [];
@@ -402,11 +396,11 @@ function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop,
     } else {
       output += `<circle cx="${x}" cy="${y}" r="${width < 1100 ? 6 : 5}" fill="${theme.paper}" stroke="${theme.accent}" stroke-width="2.5"/>`;
       const labelY = y < top + 30 ? y + 22 : y - 14;
-      output += text(x, labelY, formatValue(point.value, unit), { class: 'mono', fill: theme.ink, 'font-size': width < 1100 ? 11 : 10, 'text-anchor': 'middle' });
+      output += text(x, labelY, formatValue(point.value, unit), { class: 'mono', fill: theme.ink, 'font-size': 17, 'text-anchor': 'middle' });
     }
     if (index % labelStep === 0 || index === points.length - 1) {
       output += `<line x1="${x}" y1="${bottom + 4}" x2="${x}" y2="${bottom + 12}" stroke="${theme.line}" stroke-width="1"/>`;
-      output += text(x, bottom + 31, dateLabel(point.date), { class: 'mono', fill: theme.muted, 'font-size': width < 1100 ? 10 : 9, 'text-anchor': 'middle' });
+      output += text(x, bottom + 31, dateLabel(point.date), { class: 'mono', fill: theme.muted, 'font-size': 16, 'text-anchor': 'middle' });
     }
   });
   if (undated.length) {
@@ -456,7 +450,7 @@ export function buildScene({ rows = [], state = {}, dataset = {}, themeName = 'p
   const headers = Array.isArray(dataset?.headers) ? dataset.headers : [];
   const categoryKey = state.categoryKey || columns.find((column) => column.type === 'category')?.key || headers[0] || '';
   const valueKey = state.valueKey || columns.find((column) => column.type === 'number')?.key || headers[1] || '';
-  const dateKey = state.dateKey || columns.find((column) => column.type === 'date')?.key || '';
+  const dateKey = state.dateKey ?? columns.find((column) => column.type === 'date')?.key ?? '';
   const unit = safeText(state.unit);
   const safeRows = Array.isArray(rows) ? rows.slice(0, 20) : [];
   const header = renderHeader({ state, theme, width, margin, rows: safeRows, valueKey, unit });

@@ -75,9 +75,9 @@ export function isSupportedFile(file) {
 
 /** Return a user-facing correction for a file that cannot be read safely. */
 export function fileImportError(file, maxBytes = MAX_FILE_BYTES) {
-  if (!file) return 'выберите CSV или JSON-файл.';
-  if (!isSupportedFile(file)) return 'поддерживаются только файлы CSV и JSON.';
-  if (Number.isFinite(file.size) && file.size > maxBytes) return 'файл слишком большой: максимум 1 МБ.';
+  if (!file) return 'выберите csv или json-файл.';
+  if (!isSupportedFile(file)) return 'поддерживаются только файлы csv и json.';
+  if (Number.isFinite(file.size) && file.size > maxBytes) return 'файл слишком большой: максимум 1 мб.';
   return '';
 }
 

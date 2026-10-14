@@ -99,10 +99,23 @@ test('parseCsv treats whitespace-only input as empty', () => {
 });
 
 test('parseText blocks datasets that do not meet the row-count contract', () => {
-  const result = parseText('name,score\nA,1\nB,2\nC,3\nD,4', 'scores.csv');
+  const result = parseText('name,score\nA,1', 'scores.csv');
   assert.equal(result.dataset, null);
   const rowCountError = result.errors.find((error) => error.code === 'row-count');
-  assert.equal(rowCountError.message, 'нужно минимум 5 строк; найдено 4.');
+  assert.equal(rowCountError.message, 'нужно минимум 2 строки; найдено 1.');
+});
+
+test('small comparisons accept two rows and keep the twenty-row export limit', () => {
+  assert.equal(parseText('категория,сумма\nеда,1200\nтранспорт,600').dataset.rows.length, 2);
+  const oversized = Array.from({ length: 21 }, (_, i) => `пункт ${i},${i}`).join('\n');
+  assert.equal(parseText(`категория,сумма\n${oversized}`).dataset, null);
+});
+
+test('spreadsheet paste accepts tabs and semicolon csv preserves decimal commas and quoted delimiters', () => {
+  assert.equal(parseText('категория\tсумма\nеда\t1200\nтранспорт\t600').dataset.rows[1].сумма, 600);
+  const result = parseText('название;значение\n"еда; кофе";12,5\nтранспорт;8,2');
+  assert.equal(result.dataset.rows[0].название, 'еда; кофе');
+  assert.equal(result.dataset.rows[0].значение, 12.5);
 });
 
 test('parseText blocks invalid inferred number and date values', () => {

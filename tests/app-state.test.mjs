@@ -57,6 +57,6 @@ test('file import policy accepts supported files and rejects unsafe or oversized
   assert.equal(isSupportedFile({ name: 'notes.json', type: '', size: 12 }), true);
   assert.equal(isSupportedFile({ name: 'notes.exe', type: 'application/octet-stream', size: 12 }), false);
   assert.equal(isSupportedFile({ name: 'notes.csv', type: 'application/javascript', size: 12 }), false);
-  assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: MAX_FILE_BYTES + 1 }), 'файл слишком большой: максимум 1 МБ.');
+  assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: MAX_FILE_BYTES + 1 }), 'файл слишком большой: максимум 1 мб.');
   assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: 12 }), '');
 });

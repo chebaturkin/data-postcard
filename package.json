@@ -3,6 +3,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test tests/*.test.mjs"
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "node tests/browser.mjs",
+    "screenshots": "node tests/browser.mjs --screenshots"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
   }
 }

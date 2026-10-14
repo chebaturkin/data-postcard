@@ -1,8 +1,8 @@
-# Data Postcard Chebaturkin Edit Implementation Plan
+# data postcard Chebaturkin Edit Implementation Plan
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax.
 
-**Goal:** привести Data Postcard к ясному строчному стилю Тимофея, укрепить импорт/экспорт и доступность, подготовить статическую публикацию на GitHub Pages и проверить результат.
+**Goal:** привести data postcard к ясному строчному стилю Тимофея, укрепить импорт/экспорт и доступность, подготовить статическую публикацию на GitHub Pages и проверить результат.
 
 **Architecture:** сохранить ванильную архитектуру и общий SVG-сценограф: `src/data.js` отвечает за входные данные, `src/app.js` — за состояние и UI, `src/scene.js` — за открытку, `src/export.js` — за скачивание. Копирайт хранится рядом с контролами и статусами, а Pages-конфигурация остаётся отдельными статическими файлами.
 

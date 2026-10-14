@@ -1,8 +1,8 @@
-# Data Postcard — quality polish design
+# data postcard — quality polish design
 
 ## Goal
 
-Make the existing local Data Postcard tool dependable in daily use and visually coherent across themes, without adding server features, accounts, or decorative UI. A failed import must never replace a valid postcard, and every control must have a clear purpose.
+Make the existing local data postcard tool dependable in daily use and visually coherent across themes, without adding server features, accounts, or decorative UI. A failed import must never replace a valid postcard, and every control must have a clear purpose.
 
 ## Decisions
 

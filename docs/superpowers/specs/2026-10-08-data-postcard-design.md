@@ -1,4 +1,4 @@
-# Data Postcard — design specification
+# data postcard — design specification
 
 ## Purpose
 
