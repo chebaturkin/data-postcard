@@ -70,7 +70,7 @@ function render() {
   $('postcard-paper').dataset.theme = state.theme;
   const theme = THEMES[state.theme];
   [...$('palette-preview').children].forEach((node, index) => { node.style.background = [theme.paper, theme.accent, theme.ink, theme.accentAlt][index]; });
-  document.querySelectorAll('[data-sample]').forEach(button => button.setAttribute('aria-pressed', String(button.dataset.sample === state.sample)));
+  $('sample-select').value = state.sample;
   ['export-png', 'export-svg', 'export-html'].forEach(id => { $(id).disabled = false; });
   const needsDate = ['calendar', 'timeline'].includes(state.mode) && !state.dateKey;
   const hasNumbers = state.dataset.rows.some(row => parseNumber(row[state.valueKey]) !== null);
@@ -178,7 +178,7 @@ function bind() {
   [['title-input', 'title'], ['caption-input', 'caption'], ['unit-input', 'unit']].forEach(([id, key]) => $(id).addEventListener('input', event => { state[key] = event.target.value; render(); }));
   [['mode-select', 'mode'], ['order-select', 'order'], ['theme-select', 'theme'], ['size-select', 'size'], ['summary-select', 'summary'], ['category-select', 'categoryKey'], ['value-select', 'valueKey'], ['date-select', 'dateKey']].forEach(([id, key]) => $(id).addEventListener('change', event => { state[key] = event.target.value; render(); }));
   $('missing-toggle').addEventListener('change', event => { state.showMissing = event.target.checked; render(); });
-  document.querySelectorAll('[data-sample]').forEach(button => button.addEventListener('click', () => loadSample(button.dataset.sample)));
+  $('sample-select').addEventListener('change', event => { if (SAMPLES[event.target.value]) loadSample(event.target.value); });
   const tabs = [...document.querySelectorAll('[role="tab"]')];
   tabs.forEach((tab, index) => {
     tab.addEventListener('click', () => selectTab(tab));

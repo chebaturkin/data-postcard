@@ -36,6 +36,7 @@ try {
   await page.waitForLoadState('networkidle');
   check((await page.title()).startsWith('data postcard'), 'lowercase page title');
   check(await page.locator('#table-body tr').count() === 7, 'reading table ready');
+  check(await page.locator('#sample-select').count() === 1, 'examples are available in the data editor');
   await page.locator('#table-body tr').first().locator('input').nth(1).fill('99');
   check((await page.locator('#draft-status').textContent()).includes('ещё не применены'), 'unapplied table edits are not reported as saved');
   await page.locator('#apply-table').click();
@@ -139,16 +140,15 @@ try {
     await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); });
     await page.screenshot({ path: root + 'docs/images/editor.png', fullPage: true, animations: 'disabled' });
     for (const sample of ['expenses', 'content']) {
-      await page.locator(`[data-sample="${sample}"]`).click();
+      await page.locator('#sample-select').selectOption(sample);
       const pending = page.waitForEvent('download');
       await page.locator('#export-png').click();
       await (await pending).saveAs(root + `docs/images/${sample}.png`);
     }
     await page.locator('#reset-draft').click();
   }
-  await page.locator('.more-samples summary').click();
   for (const sample of ['weather', 'sport']) {
-    await page.locator(`[data-sample="${sample}"]`).click();
+    await page.locator('#sample-select').selectOption(sample);
     check(await page.locator('#table-body tr').count() === 7, `${sample} sample available`);
   }
   await page.locator('#reset-draft').click();

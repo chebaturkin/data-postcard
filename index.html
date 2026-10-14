@@ -6,14 +6,14 @@
     <meta name="description" content="data postcard — редактор небольших графиков для постов, отчётов и личных итогов. внесите цифры, выберите оформление и скачайте открытку. данные остаются в браузере." />
     <meta name="theme-color" content="#f5f2ec" />
     <title>data postcard — график для поста или отчёта</title>
-    <link rel="icon" href="assets/favicon.svg" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20261014" />
+    <link rel="icon" href="assets/favicon.svg?v=20261014b" type="image/svg+xml" />
+    <link rel="stylesheet" href="styles.css?v=20261014b" />
   </head>
   <body>
     <a class="skip-link" href="#editor">к редактору</a>
     <header class="masthead">
       <a class="brand" href="./" aria-label="data postcard — на главную">
-        <svg class="brand-mark" viewBox="0 0 36 36" aria-hidden="true"><rect x="1" y="1" width="34" height="34" rx="10" fill="currentColor"/><path d="M10 12h10M10 18h16M10 24h7" stroke="#fffaf5" stroke-width="3" stroke-linecap="round"/></svg>
+        <img class="brand-mark" src="assets/logo.svg" width="48" height="40" alt="" />
         <span>data postcard</span>
       </a>
       <a class="quiet-link" href="https://github.com/chebaturkin/data-postcard" target="_blank" rel="noopener noreferrer">о проекте <span aria-hidden="true">↗</span></a>
@@ -21,17 +21,8 @@
 
     <main>
       <section class="intro" aria-labelledby="site-title">
-        <div>
-          <h1 id="site-title">ваши цифры.<br /><em>одна открытка.</em></h1>
-          <p>соберите график для поста, отчёта или личных итогов.<br class="desktop-break" /> внесите цифры, выберите оформление и сохраните картинку.</p>
-        </div>
-        <div class="intro-note"><span class="note-dot" aria-hidden="true"></span><p>можно начать с примера.<br />а потом заменить цифры на свои.</p><span class="note-arrow" aria-hidden="true">↙</span></div>
-      </section>
-
-      <section class="starter-list" aria-label="выберите пример для начала">
-        <button class="starter" type="button" data-sample="reading" aria-pressed="true"><span class="starter-icon starter-icon--reading" aria-hidden="true">↗</span><span><strong>неделя чтения</strong><small>для заметки о привычке</small></span><span class="starter-arrow" aria-hidden="true">↗</span></button>
-        <button class="starter" type="button" data-sample="expenses" aria-pressed="false"><span class="starter-icon starter-icon--expenses" aria-hidden="true">₽</span><span><strong>куда ушли деньги</strong><small>расходы по категориям</small></span><span class="starter-arrow" aria-hidden="true">↗</span></button>
-        <button class="starter" type="button" data-sample="content" aria-pressed="false"><span class="starter-icon starter-icon--content" aria-hidden="true">≋</span><span><strong>месяц публикаций</strong><small>цифры для отчёта</small></span><span class="starter-arrow" aria-hidden="true">↗</span></button>
+        <h1 id="site-title">график из ваших данных</h1>
+        <p>внесите цифры в таблицу, настройте открытку и сохраните её для поста или отчёта.</p>
       </section>
 
       <div class="app-shell" id="editor">
@@ -44,15 +35,12 @@
             </section>
           </div>
           <div class="preview-meta"><span id="stage-size">1200 × 900</span><p id="render-status" role="status" aria-live="polite">открытка готова</p></div>
-          <div class="download-panel">
-            <div><h2>можно делиться</h2><p>сохраните открытку и добавьте в свой пост или отчёт.</p></div>
-            <div class="export-list">
+          <div class="export-list" aria-label="сохранить открытку">
               <button class="primary-button" id="export-png" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m-4-4 4 4 4-4M4 13v4h12v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>скачать png</button>
               <button class="secondary-button" id="export-svg" type="button" disabled aria-label="скачать svg">svg</button>
               <button class="secondary-button" id="export-html" type="button" disabled aria-label="скачать автономную html-страницу">html</button>
-            </div>
           </div>
-          <p class="privacy-note"><svg viewBox="0 0 18 18" aria-hidden="true"><rect x="4" y="8" width="10" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.3"/><path d="M6 8V6a3 3 0 0 1 6 0v2" fill="none" stroke="currentColor" stroke-width="1.3"/></svg>ваши данные остаются в браузере. аккаунт не нужен.</p>
+          <p class="privacy-note">данные обрабатываются и сохраняются в этом браузере.</p>
         </section>
 
         <aside class="settings-rail" aria-label="редактор открытки">
@@ -63,8 +51,9 @@
           </div>
 
           <section id="panel-data" class="tab-panel" role="tabpanel" aria-labelledby="tab-data">
-            <h2>внесите свои цифры</h2>
-            <p class="panel-help">замените значения в таблице. можно добавить от 2 до 20 строк.</p>
+            <label class="field-label sample-label" for="sample-select">пример данных</label>
+            <select class="select-input" id="sample-select"><option value="" disabled>свои данные</option><option value="reading">неделя чтения</option><option value="expenses">расходы за месяц</option><option value="content">месяц публикаций</option><option value="weather">температура за неделю</option><option value="sport">неделя тренировок</option></select>
+            <p class="panel-help">замените подписи и значения в таблице. можно добавить от 2 до 20 строк.</p>
             <div class="data-table-wrap"><table id="data-table" class="data-table"><caption class="visually-hidden">редактирование данных открытки</caption><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
             <div class="table-actions"><button class="text-button" id="add-row" type="button">+ добавить строку</button><span id="data-summary"></span></div>
             <button class="primary-button apply-button" id="apply-table" type="button">обновить открытку</button>
@@ -83,11 +72,9 @@
                 <button class="secondary-button" id="paste-button" type="button">использовать эти данные</button>
               </div>
             </details>
-            <details class="more-samples"><summary>ещё примеры <span aria-hidden="true">+</span></summary><div class="sample-list"><button class="secondary-button" type="button" data-sample="weather" aria-pressed="false">погода</button><button class="secondary-button" type="button" data-sample="sport" aria-pressed="false">тренировки</button></div></details>
           </section>
 
           <section id="panel-design" class="tab-panel" role="tabpanel" aria-labelledby="tab-design" hidden>
-            <h2>как будет выглядеть</h2>
             <label class="field-label" for="mode-select">график</label>
             <select class="select-input" id="mode-select"><option value="bars">полосы — сравнить значения</option><option value="dots">точки — сравнить значения</option><option value="timeline">линия — изменения по датам</option><option value="calendar">календарь — записи по дням</option></select>
             <label class="field-label" for="theme-select">палитра</label>
@@ -108,8 +95,6 @@
           </section>
 
           <section id="panel-text" class="tab-panel" role="tabpanel" aria-labelledby="tab-text" hidden>
-            <h2>что рассказывают цифры</h2>
-            <p class="panel-help">добавьте контекст, чтобы открытка была понятна сама по себе.</p>
             <label class="field-label" for="title-input">заголовок</label><input class="text-input text-input--title" id="title-input" type="text" maxlength="120" autocomplete="off" />
             <label class="field-label" for="caption-input">заметка под заголовком</label><textarea class="text-input text-input--area" id="caption-input" rows="4" maxlength="300"></textarea>
             <label class="field-label" for="unit-input">единицы измерения</label><input class="text-input" id="unit-input" type="text" maxlength="20" placeholder="мин, ₽, км" autocomplete="off" />
@@ -119,9 +104,8 @@
         </aside>
       </div>
 
-      <section class="about-strip" aria-labelledby="about-heading"><h2 id="about-heading">когда пригодится</h2><p>показать расходы за месяц, добавить цифры в отчёт о работе или собрать итоги недели. небольшой набор данных превращается в картинку с заголовком и вашим пояснением.</p><p>png подойдёт для публикации, svg — для дальнейшей вёрстки, html — чтобы открыть готовую открытку отдельной страницей.</p></section>
     </main>
     <footer class="site-footer"><span>data postcard</span><a href="https://github.com/chebaturkin/data-postcard" target="_blank" rel="noopener noreferrer">код и описание на github <span aria-hidden="true">↗</span></a></footer>
-    <script type="module" src="src/app.js?v=20261014"></script>
+    <script type="module" src="src/app.js?v=20261014b"></script>
   </body>
 </html>
