@@ -1,3 +1,4 @@
+import { t, getLocale, localeTag, mountLocale, translateMessage, setLocale } from '../i18n.js';
 import { DRAFT_CHOICES, readDraft, serializeDraft } from './editor.js';
 import { MAX_FILE_BYTES } from './app-state.js';
 
@@ -8,15 +9,15 @@ const failure = error => ({ project: null, error });
 
 /** Read a portable postcard without changing any live editor state. */
 export function readProject(text) {
-  if (typeof text !== 'string') return failure('не удалось прочитать файл открытки.');
-  if (new TextEncoder().encode(text).byteLength > MAX_FILE_BYTES) return failure('файл слишком большой: максимум 1 мб.');
+  if (typeof text !== 'string') return failure(t("s114"));
+  if (new TextEncoder().encode(text).byteLength > MAX_FILE_BYTES) return failure(t("s113"));
   let saved;
   try { saved = JSON.parse(text.replace(/^\uFEFF/, '')); }
-  catch { return failure('json повреждён. выберите файл, сохранённый через «сохранить черновик».'); }
-  if (!isRecord(saved) || saved.type !== 'data-postcard') return failure('это не файл открытки. csv и json с данными можно загрузить в разделе выше.');
-  if (saved.version !== 1) return failure('эта версия файла открытки пока не поддерживается.');
+  catch { return failure(t("s115")); }
+  if (!isRecord(saved) || saved.type !== 'data-postcard') return failure(t("s116"));
+  if (saved.version !== 1) return failure(t("s117"));
 
-  const damaged = 'файл открытки содержит неверные данные или настройки. предыдущая открытка сохранена.';
+  const damaged = t("s118");
   if (!Array.isArray(saved.headers) || !saved.headers.length || !saved.headers.every(header => typeof header === 'string' && header === header.trim()) || !Array.isArray(saved.rows) || !isRecord(saved.settings)) return failure(damaged);
   // Reject malformed rows before the draft reader could pad or discard cells.
   const headers = saved.headers;
@@ -44,7 +45,7 @@ export function serializeProject(state) {
 }
 
 export function projectFileError(file) {
-  if (!file || typeof file.name !== 'string' || !file.name.toLowerCase().endsWith('.json')) return 'выберите файл открытки в формате json.';
-  if (file.size > MAX_FILE_BYTES) return 'файл слишком большой: максимум 1 мб.';
+  if (!file || typeof file.name !== 'string' || !file.name.toLowerCase().endsWith('.json')) return t("s119");
+  if (file.size > MAX_FILE_BYTES) return t("s113");
   return '';
 }

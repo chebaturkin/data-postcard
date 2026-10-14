@@ -1,102 +1,103 @@
 # data postcard
 
-редактор небольших графиков для постов, отчётов и личных итогов. внесите цифры в таблицу, добавьте заголовок и пояснение, выберите оформление и скачайте открытку.
+english · [русский](README.ru.md)
 
-[открыть редактор ↗](https://chebaturkin.github.io/data-postcard/)
+small charts for posts, reports and personal notes. enter numbers in a table, add a title and caption, choose a design and download a postcard.
 
-![редактор data postcard: открытка и таблица с данными](docs/images/editor.png)
+[open the editor ↗](https://chebaturkin.github.io/data-postcard/?lang=en) · [открыть по-русски](https://chebaturkin.github.io/data-postcard/?lang=ru)
 
-## как пользоваться
+![data postcard editor with a chart and its source table](docs/images/en/editor.png)
 
-1. выберите пример и замените цифры и названия в таблице. строки можно добавлять и удалять. нажмите «обновить открытку».
-2. во вкладке «текст» добавьте заголовок, пояснение и единицы измерения.
-3. во вкладке «график» выберите представление и колонки. палитра и формат находятся рядом с результатом. итог можно показать как сумму или среднее либо скрыть.
-4. скачайте png для публикации, svg для вёрстки или html, который открывается отдельной страницей. перед скачиванием изменения таблицы применяются автоматически. если есть ошибка, редактор выделит ячейку и предложит её исправить.
+## using the editor
 
-если данные уже собраны, раскройте «загрузить файл или вставить таблицу». можно перетащить csv или json, вставить текст или скопировать ячейки из excel и google sheets. первая строка должна содержать названия колонок. csv может использовать запятые или точку с запятой; ячейки из таблицы разделяются табуляцией.
+1. choose an example and replace the values and labels. add or delete rows, then choose “update postcard”.
+2. open “text” to add a title, caption and units.
+3. open “chart” to choose a view and its columns. the palette and format sit beside the result. show a total, an average or no summary.
+4. download png for publishing, svg for layout work or a standalone html page. downloading applies pending table edits first. errors highlight the cell that needs correcting.
+
+open “load a file or paste a table” to drop csv or json, paste text or copy cells from excel and google sheets. the first row needs column names. csv supports commas or semicolons; copied spreadsheet cells use tabs.
 
 ```csv
-категория,сумма
-продукты,18400
-кафе,6200
-транспорт,3800
+category,amount
+groceries,18400
+cafés,6200
+transport,3800
 ```
 
-полосы и точки помогают сравнить значения. линия показывает изменения по датам, календарь показывает записи по дням. для линии и календаря нужна колонка с датами, например `2026-10-14`.
+bars and dots compare values. a line shows changes over time; a calendar shows entries by day. line and calendar views need a date column, for example `2026-10-14`.
 
-доступны форматы **1200 × 900** для поста и **1080 × 1920** для сторис. кнопка «посмотреть открытку» открывает результат в масштабе 100%. на телефоне и планшете редактор идёт первым, а компактная миниатюра остаётся рядом с вкладками.
+formats are **1200 × 900** for posts and **1080 × 1920** for stories. “view postcard” opens a 100% preview. on phones and tablets, the editor comes first, with a compact preview beside the tabs.
+
+choose **ru / en** in the header to switch language in place. a valid `?lang=ru` or `?lang=en` wins over the saved choice, then the first supported browser language, then english. your own text, imported data and pending table cells are kept.
 
 <details>
-<summary>примеры открыток и редактор на телефоне</summary>
+<summary>example postcards and the mobile editor</summary>
 
-пять демонстрационных наборов помогают попробовать графики на расходах, публикациях, чтении, погоде и тренировках. ниже результаты, скачанные из редактора; цифры вымышлены.
+five fictional datasets cover expenses, posts, reading, weather and training. these results were downloaded from the editor.
 
-| расходы по категориям | публикации по площадкам |
+| expenses by category | posts by platform |
 | --- | --- |
-| ![открытка с расходами за сентябрь](docs/images/expenses.png) | ![открытка с числом публикаций за месяц](docs/images/content.png) |
+| ![september expenses postcard](docs/images/en/expenses.png) | ![monthly posts postcard](docs/images/en/content.png) |
 
-![неделя чтения с общей суммой минут](docs/images/reading.png)
+![a week of reading with total minutes](docs/images/en/reading.png)
 
-<img src="docs/images/mobile.png" width="360" alt="мобильный редактор data postcard с таблицей и миниатюрой открытки" />
+<img src="docs/images/en/mobile.png" width="360" alt="mobile editor with its table and compact postcard preview" />
 
 </details>
 
-## данные и черновик
+## data and drafts
 
-данные обрабатываются в браузере и не отправляются на сервер. аккаунт не нужен. применённые данные, текст и настройки сохраняются в этом браузере и восстанавливаются после перезагрузки. неприменённые ячейки, включая ошибки, сохраняются отдельно: они появятся в таблице, а открытка сохранит последний корректный результат.
+data is processed in the browser and is not sent to a server. no account is needed. applied data, text and settings are saved in this browser and restored after a reload. pending cells, including errors, are saved separately while the postcard keeps the last valid result.
 
-«вернуть пример чтения» возвращает начальный набор. замену источника и возврат примера можно отменить кнопкой сверху. черновик привязан к браузеру и адресу сайта; очистка данных сайта удалит его. если браузер запрещает сохранение, редактор продолжит работать и сообщит об этом.
+“restore reading example” brings back the initial dataset. the button above the editor can undo a source replacement or reset. the draft belongs to this browser and site address; clearing site data removes it. if browser storage is blocked, editing continues and the app explains that the draft could not be saved.
 
-чтобы перенести открытку в другой браузер или сохранить несколько вариантов, нажмите «сохранить черновик». скачается файл `*.postcard.json` с данными, неприменёнными ячейками, текстом и настройками. «открыть файл» восстановит его для редактирования. сохранение и открытие файла работают и при недоступном хранилище браузера.
+“save draft” downloads a `*.postcard.json` file containing data, pending cells, text and settings. “open file” restores it for editing. saved files let you keep several versions or move a postcard to another browser, even when browser storage is unavailable.
 
-png, svg и автономный html используют ту же сцену и встроенные локальные шрифты. html также содержит раскрываемую таблицу применённых данных. перед пересылкой html или файла черновика проверьте данные внутри.
+png, svg and standalone html use the same scene and embedded local fonts. html also includes an expandable table of applied data. review the contents before sharing an html page or draft file.
 
-## ограничения
+## limits
 
-- от **2 до 20 строк**, файлы csv/json и файлы черновиков до **1 мб**;
-- пустые значения можно оставить видимыми;
-- ошибка в таблице, файле или настройках сохраняет предыдущий корректный результат;
-- несовместимые настройки и слишком длинный текст блокируют экспорт. редактор подскажет, что исправить;
-- большие таблицы нужно сократить до нужных категорий или периода. плотные данные можно проверить в масштабе 100%;
-- автоматический черновик в браузере остаётся один. сохранённые файлы позволяют хранить несколько открыток.
+- **2 to 20 rows**; csv, json and draft files up to **1 mb**;
+- missing values can remain visible;
+- table, file or setting errors keep the previous valid result;
+- incompatible settings or text that leaves no room for a chart block export and show a correction;
+- reduce large tables to the categories or dates you need; use the 100% preview to check dense charts;
+- the browser keeps one automatic draft. downloaded files can hold multiple postcards.
 
-## запустить локально
+## run locally
 
-это статический сайт на html, css и javascript. сборка и установка зависимостей для запуска не нужны:
+this is a static html, css and javascript site. running it needs no build or dependencies:
 
 ```bash
 python3 -m http.server 8000
 ```
 
-откройте [локальный редактор](http://localhost:8000).
+open the [local editor](http://localhost:8000).
 
-## проверки и снимки
-
-для тестов парсера, таблицы, черновика, сортировки, графиков и экспорта нужен node.js:
+## checks and captures
 
 ```bash
 npm test
-```
-
-для браузерной проверки:
-
-```bash
 npm install
 npx playwright install chromium
 npm run test:browser
 node tests/scene-layout-browser.mjs
+python3 -m pip install playwright
+python3 -m playwright install chromium
+APP_URL=http://localhost:8000/ python3 tests/verify-i18n.py
 ```
 
-основной браузерный сценарий запускает статический сервер и проверяет импорт, ошибки, актуальность скачиваемых данных, клавиатуру, черновики, переносимые файлы, недоступное хранилище, анимации и компоновку. основной сценарий проверяет ширины от 320 до 1440 px; отдельный сценарий компоновки проверяет длинные тексты, двадцать категорий и близкие даты.
-
-обновить реальные скриншоты редактора и скачанные примеры в `docs/images/`:
+the browser suite starts a static server and checks import, errors, current download data, keyboard controls, drafts, portable files, blocked storage, animation and layout from 320 to 1440 px. the scene checks cover long text, twenty categories and dates close together. locale checks cover browser defaults, pending edits, errors, exports and persistence in both languages.
 
 ```bash
 npm run screenshots
+APP_URL=http://localhost:8000/ python3 tests/capture-bilingual.py
 ```
 
-## исходники и публикация
+the first command refreshes the russian captures. the second captures both languages, including actual downloaded results.
 
-в [`examples/`](examples/) лежат csv/json для пяти примеров и svg с готовыми результатами. [workflow](.github/workflows/pages.yml) публикует ветку `master` на github pages через github actions.
+## source and deployment
 
-исследование аналогов и выбор локальных улучшений описаны в [заметке](docs/superpowers/specs/2026-10-14-local-workflow-design.md).
+[`examples/`](examples/) contains the five csv/json datasets and their svg results. english versions live in [`examples/en/`](examples/en/). `i18n.js` owns the local dictionaries and locale selection; user data keeps its original keys and text.
+
+the [workflow](.github/workflows/pages.yml) publishes `master` to github pages. the [workflow design note](docs/superpowers/specs/2026-10-14-local-workflow-design.md) records the local editing decisions.

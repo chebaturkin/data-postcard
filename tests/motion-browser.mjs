@@ -169,7 +169,7 @@ export async function checkMotion({ page, context, url, root, check }) {
   check((await fallback.locator('#postcard-preview').textContent()).includes('без анимационного api'), 'editor works without Web Animations API');
   await fallback.close();
 
-  const touch = await context.browser().newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
+  const touch = await context.browser().newContext({ locale: 'ru-RU', viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true });
   const touchPage = await touch.newPage();
   await touchPage.goto(url);
   await touchPage.locator('#tab-design').tap();

@@ -1,119 +1,115 @@
-<!doctype html>
-<html lang="ru" data-theme="paper" data-size="landscape">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="description" content="data postcard: редактор небольших графиков для постов, отчётов и личных итогов. внесите цифры, выберите оформление и скачайте открытку. данные остаются в браузере." />
-    <meta name="theme-color" content="#f5f2ec" />
-    <title>data postcard: график для поста или отчёта</title>
-    <link rel="icon" href="assets/favicon.svg?v=20261014b" type="image/svg+xml" />
-    <link rel="stylesheet" href="styles.css?v=20261014c" />
-  </head>
-  <body>
-    <a class="skip-link" href="#editor">к редактору</a>
-    <header class="masthead">
-      <a class="brand" href="./" aria-label="data postcard, на главную">
-        <img class="brand-mark" src="assets/logo.svg" width="48" height="40" alt="" />
-        <span>data postcard</span>
-      </a>
-      <a class="quiet-link" href="https://github.com/chebaturkin/data-postcard" target="_blank" rel="noopener noreferrer">о проекте <span aria-hidden="true">↗</span></a>
-    </header>
+<!DOCTYPE html>
 
-    <main>
-      <section class="intro" aria-labelledby="site-title">
-        <h1 id="site-title">стол подготовки открытки</h1>
-        <p>данные → текст → график → готовая открытка.</p>
-      </section>
-
-      <div class="document-tools" aria-label="источник и черновик">
-  <div class="source-tools"><label class="field-label" for="sample-select">источник</label><select class="select-input" id="sample-select"><option value="" disabled>свои данные</option><option value="reading">неделя чтения</option><option value="expenses">расходы за месяц</option><option value="content">месяц публикаций</option><option value="weather">температура за неделю</option><option value="sport">неделя тренировок</option></select><button class="text-button" id="show-import" type="button">вставить / открыть</button></div>
-  <div class="document-actions"><button class="secondary-button" id="save-project" type="button" aria-describedby="project-help">сохранить черновик</button><button class="text-button" id="undo-source" type="button" hidden>отменить замену</button></div>
+<html data-size="landscape" data-theme="paper" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="data postcard: small charts for posts, reports and personal notes. enter numbers, choose a design and download a postcard. your data stays in your browser." data-i18n-content="s163" name="description"/>
+<meta content="#f5f2ec" name="theme-color"/>
+<title data-i18n="s181">data postcard: a chart for a post or report</title>
+<link href="assets/favicon.svg?v=20261014b" rel="icon" type="image/svg+xml"/>
+<link href="styles.css?v=20261014c" rel="stylesheet"/>
+</head>
+<body>
+<a class="skip-link" data-i18n="s182" href="#editor">к редактору</a>
+<header class="masthead">
+<a aria-label="data postcard, на главную" class="brand" data-i18n-aria-label="s164" href="./">
+<img alt="" class="brand-mark" height="40" src="assets/logo.svg" width="48"/>
+<span>data postcard</span>
+</a>
+<nav aria-label="language" class="language-control" data-language-control=""><button aria-label="русский" aria-pressed="false" data-language="ru" lang="ru" type="button">ru</button><span aria-hidden="true">/</span><button aria-label="english" aria-pressed="false" data-language="en" lang="en" type="button">en</button></nav><a class="quiet-link" href="https://github.com/chebaturkin/data-postcard" rel="noopener noreferrer" target="_blank"><span data-i18n="s183">о проекте</span> <span aria-hidden="true">↗</span></a>
+</header>
+<main>
+<section aria-labelledby="site-title" class="intro">
+<h1 data-i18n="s184" id="site-title">стол подготовки открытки</h1>
+<p data-i18n="s185">данные → текст → график → готовая открытка.</p>
+</section>
+<div aria-label="источник и черновик" class="document-tools" data-i18n-aria-label="s165">
+<div class="source-tools"><label class="field-label" data-i18n="s186" for="sample-select">источник</label><select class="select-input" id="sample-select"><option data-i18n="s187" disabled="" value="">свои данные</option><option data-i18n="s126" value="reading">неделя чтения</option><option data-i18n="s188" value="expenses">расходы за месяц</option><option data-i18n="s148" value="content">месяц публикаций</option><option data-i18n="s155" value="weather">температура за неделю</option><option data-i18n="s159" value="sport">неделя тренировок</option></select><button class="text-button" data-i18n="s189" id="show-import" type="button">вставить / открыть</button></div>
+<div class="document-actions"><button aria-describedby="project-help" class="secondary-button" data-i18n="s190" id="save-project" type="button">сохранить черновик</button><button class="text-button" data-i18n="s191" hidden="" id="undo-source" type="button">отменить замену</button></div>
 </div>
-<div class="draft-document"><span id="draft-status" role="status">черновик сохраняется в браузере</span><p id="project-status" role="status" aria-live="polite" hidden></p></div>
+<div class="draft-document"><span data-i18n="s192" id="draft-status" role="status">черновик сохраняется в браузере</span><p aria-live="polite" hidden="" id="project-status" role="status"></p></div>
 <div class="app-shell" id="editor">
-        <section class="stage-column" aria-label="предпросмотр и сохранение">
-          <button class="secondary-button view-button" id="view-postcard" type="button">посмотреть открытку <span aria-hidden="true">↗</span></button><div class="preview-surface">
-            <section class="postcard-stage" id="postcard-stage" tabindex="-1" aria-label="открытка 1200 на 900">
-              <div class="postcard-paper" id="postcard-paper" data-theme="paper">
-                <svg id="postcard-preview" class="postcard-preview" role="img" aria-labelledby="scene-title scene-desc" viewBox="0 0 1200 900"><title id="scene-title">предпросмотр открытки</title><desc id="scene-desc">стол подготовки открытки.</desc></svg>
-              </div>
-            </section>
-          </div>
-          <div class="preview-meta"><span id="stage-size">1200 × 900</span><p id="render-status" role="status" aria-live="polite" aria-atomic="true"><span class="status-mark" id="status-mark" aria-hidden="true">✓</span><span id="render-message">открытка готова</span></p></div>
-          <div class="export-list" aria-label="сохранить открытку">
-              <button class="primary-button" id="export-png" type="button" disabled><svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 3v9m-4-4 4 4 4-4M4 13v4h12v-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>скачать png</button>
-              <button class="secondary-button" id="export-svg" type="button" disabled aria-label="скачать svg">svg</button>
-              <button class="secondary-button" id="export-html" type="button" disabled aria-label="скачать автономную html-страницу">html</button>
-          </div>
-          <div class="result-settings"><div><label class="field-label" for="theme-select">палитра</label><select class="select-input" id="theme-select"><option value="paper">бумага и олива</option><option value="archive">песок и синий</option><option value="court">мягкий зелёный</option><option value="night">тёмная</option><option value="ink">чёрно-белая</option></select><div class="palette-preview" id="palette-preview" aria-hidden="true"><i></i><i></i><i></i><i></i></div></div><div><label class="field-label" for="size-select">формат</label><select class="select-input" id="size-select"><option value="landscape">пост · 1200 × 900</option><option value="stories">сторис · 1080 × 1920</option></select></div></div><p class="privacy-note">данные обрабатываются в вашем браузере.</p>
-        </section>
-
-        <aside class="settings-rail" aria-label="редактор открытки"><button id="compact-view" class="compact-view" type="button" aria-label="посмотреть открытку"><span id="compact-image" aria-hidden="true"></span><span>посмотреть открытку ↗</span></button>
-          <div class="editor-tabs" role="tablist" aria-label="настройки">
-            <button id="tab-data" type="button" role="tab" aria-selected="true" aria-controls="panel-data" tabindex="0">данные</button>
-            <button id="tab-text" type="button" role="tab" aria-selected="false" aria-controls="panel-text" tabindex="-1">текст</button>
-            <button id="tab-design" type="button" role="tab" aria-selected="false" aria-controls="panel-design" tabindex="-1">график</button>
-            <span class="tab-indicator" id="tab-indicator" aria-hidden="true"></span>
-          </div>
-
-          <section id="panel-data" class="tab-panel" role="tabpanel" aria-labelledby="tab-data">
-            <p class="panel-help">замените подписи и значения в таблице. можно добавить от 2 до 20 строк.</p>
-            <div class="data-table-wrap"><table id="data-table" class="data-table"><caption class="visually-hidden">редактирование данных открытки</caption><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
-            <p id="table-scroll-hint" class="table-scroll-hint" hidden>таблица продолжается справа. прокрутите её по горизонтали.</p><div class="table-actions"><button class="text-button" id="add-row" type="button">+ добавить строку</button><span id="data-summary"></span></div>
-            <button class="primary-button apply-button" id="apply-table" type="button">обновить открытку</button>
-            <p class="field-hint pending-note" id="table-status" role="status" hidden></p><p class="input-error" id="data-errors" role="alert" hidden></p><p class="input-warning" id="data-warnings" role="status" hidden></p>
-            <details class="import-details" id="import-details">
-              <summary>загрузить файл или вставить таблицу <span aria-hidden="true">+</span></summary>
-              <div class="import-content">
-                <div class="drop-zone" id="drop-zone" tabindex="0" role="button" aria-label="выбрать или перетащить csv или json-файл" aria-describedby="drop-help">
-                  <input id="file-input" class="visually-hidden" type="file" tabindex="-1" aria-label="выберите csv или json-файл" accept=".csv,.json,text/csv,application/json" />
-                  <span class="drop-zone__title">перетащите файл сюда</span><span id="drop-help">csv или json · до 1 мб</span>
-                </div>
-                <button class="text-button" id="import-button" type="button">выбрать файл</button>
-                <label class="field-label" for="paste-input">или скопируйте ячейки из таблицы</label>
-                <textarea id="paste-input" class="paste-input" rows="4" placeholder="день&#9;минуты&#10;понедельник&#9;32&#10;вторник&#9;48" aria-describedby="paste-help"></textarea>
-                <p class="field-hint" id="paste-help">в первой строке нужны названия колонок. подойдут csv, json или ячейки из excel и google sheets.</p>
-                <button class="secondary-button" id="paste-button" type="button">использовать эти данные</button>
-              </div>
-            </details>
-            <details class="project-details" id="project-details">
-              <summary>открыть черновик <span aria-hidden="true">+</span></summary>
-              <p class="field-hint" id="project-help">черновик json содержит таблицу, текст и настройки. скачивание png, svg или html находится под открыткой.</p>
-              <div class="project-actions">
-                <button class="secondary-button" id="open-project" type="button" aria-describedby="project-help" aria-busy="false">открыть файл</button>
-              </div>
-              <input id="project-input" class="visually-hidden" type="file" tabindex="-1" aria-label="выберите сохранённую открытку" accept=".json,application/json" />
-            </details>
-          </section>
-
-          <section id="panel-design" class="tab-panel" role="tabpanel" aria-labelledby="tab-design" hidden>
-            <p class="input-error" id="graph-error" role="status" hidden></p><fieldset class="mode-group"><legend>сравнить значения</legend><label><input type="radio" name="graph-mode" value="bars" checked> полосы</label><label><input type="radio" name="graph-mode" value="dots"> точки</label></fieldset><fieldset class="mode-group"><legend>показать по датам</legend><label><input type="radio" name="graph-mode" value="timeline"> линия</label><label><input type="radio" name="graph-mode" value="calendar"> календарь</label></fieldset>
-            <select class="select-input visually-hidden" id="mode-select" tabindex="-1" aria-hidden="true"><option value="bars">полосы: сравнить значения</option><option value="dots">точки: сравнить значения</option><option value="timeline">линия: изменения по датам</option><option value="calendar">календарь: записи по дням</option></select>
-            <label class="field-label" for="summary-select">итог на открытке</label>
-            <select class="select-input" id="summary-select"><option value="total">сумма значений</option><option value="average">среднее значение</option><option value="none">без итога</option></select>
-            <label class="field-label" for="order-select">порядок строк</label>
-            <select class="select-input" id="order-select"><option value="input">как в таблице</option><option value="ascending">от меньшего к большему</option><option value="descending">от большего к меньшему</option></select>
-            <details class="column-details" open><summary>колонки и пропуски <span aria-hidden="true">+</span></summary>
-              <label class="field-label" for="category-select">подписи</label><select class="select-input" id="category-select" aria-label="колонка подписей"></select>
-              <label class="field-label" for="value-select">значения</label><select class="select-input" id="value-select" aria-label="колонка значений"></select>
-              <label class="field-label" for="date-select">даты</label><select class="select-input" id="date-select" aria-label="колонка дат"></select>
-              <label class="check-row"><input id="missing-toggle" type="checkbox" checked /><span>показывать пустые значения</span></label>
-            </details>
-          </section>
-
-          <section id="panel-text" class="tab-panel" role="tabpanel" aria-labelledby="tab-text" hidden>
-            <label class="field-label" for="title-input">заголовок</label><input class="text-input text-input--title" id="title-input" type="text" maxlength="120" autocomplete="off" />
-            <label class="field-label" for="caption-input">заметка под заголовком</label><textarea class="text-input text-input--area" id="caption-input" rows="4" maxlength="300"></textarea>
-            <label class="field-label" for="unit-input">единицы измерения</label><input class="text-input" id="unit-input" type="text" maxlength="20" placeholder="мин, ₽, км" autocomplete="off" />
-            <p class="field-hint">текст сразу появится на открытке.</p>
-          </section>
-          <div class="draft-bar"><button class="text-button" id="reset-draft" type="button">вернуть пример чтения</button></div>
-        </aside>
-      </div>
-
-    </main>
-    <footer class="site-footer"><span>data postcard</span><a href="https://github.com/chebaturkin/data-postcard" target="_blank" rel="noopener noreferrer">код и описание на github <span aria-hidden="true">↗</span></a></footer>
-    <dialog id="postcard-viewer" aria-labelledby="viewer-title"><div class="viewer-toolbar"><h2 id="viewer-title">готовая открытка</h2><button class="secondary-button" id="close-viewer" type="button">вернуться к редактору</button></div><label class="viewer-scale" for="viewer-scale">масштаб <select id="viewer-scale" class="select-input"><option value="fit">вместить целиком</option><option value="actual">100% · читать детали</option></select></label><p class="field-hint viewer-help">в масштабе 100% можно прокручивать открытку по горизонтали и вертикали.</p><div class="viewer-image" id="viewer-image"></div><div class="viewer-exports"><button class="primary-button" data-export="png" type="button">скачать png</button><button class="secondary-button" data-export="svg" type="button">svg</button><button class="secondary-button" data-export="html" type="button">html</button></div></dialog>
-    <script type="module" src="src/app.js?v=20261014c"></script>
-  </body>
+<section aria-label="предпросмотр и сохранение" class="stage-column" data-i18n-aria-label="s166">
+<button class="secondary-button view-button" id="view-postcard" type="button"><span data-i18n="s171">посмотреть открытку</span> <span aria-hidden="true">↗</span></button><div class="preview-surface">
+<section aria-label="открытка 1200 на 900" class="postcard-stage" data-i18n-aria-label="s8" id="postcard-stage" tabindex="-1">
+<div class="postcard-paper" data-theme="paper" id="postcard-paper">
+<svg aria-labelledby="scene-title scene-desc" class="postcard-preview" id="postcard-preview" role="img" viewbox="0 0 1200 900"><title data-i18n="s193" id="scene-title">предпросмотр открытки</title><desc data-i18n="s194" id="scene-desc">стол подготовки открытки.</desc></svg>
+</div>
+</section>
+</div>
+<div class="preview-meta"><span id="stage-size">1200 × 900</span><p aria-atomic="true" aria-live="polite" id="render-status" role="status"><span aria-hidden="true" class="status-mark" id="status-mark">✓</span><span data-i18n="s11" id="render-message">открытка готова</span></p></div>
+<div aria-label="сохранить открытку" class="export-list" data-i18n-aria-label="s167">
+<button class="primary-button" disabled="" id="export-png" type="button"><svg aria-hidden="true" viewbox="0 0 20 20"><path d="M10 3v9m-4-4 4 4 4-4M4 13v4h12v-4" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="1.6"></path></svg><span data-i18n="s195">скачать png</span></button>
+<button aria-label="скачать svg" class="secondary-button" data-i18n-aria-label="s168" disabled="" id="export-svg" type="button">svg</button>
+<button aria-label="скачать автономную html-страницу" class="secondary-button" data-i18n-aria-label="s169" disabled="" id="export-html" type="button">html</button>
+</div>
+<div class="result-settings"><div><label class="field-label" data-i18n="s196" for="theme-select">палитра</label><select class="select-input" id="theme-select"><option data-i18n="s197" value="paper">бумага и олива</option><option data-i18n="s198" value="archive">песок и синий</option><option data-i18n="s199" value="court">мягкий зелёный</option><option data-i18n="s200" value="night">тёмная</option><option data-i18n="s201" value="ink">чёрно-белая</option></select><div aria-hidden="true" class="palette-preview" id="palette-preview"><i></i><i></i><i></i><i></i></div></div><div><label class="field-label" data-i18n="s202" for="size-select">формат</label><select class="select-input" id="size-select"><option data-i18n="s203" value="landscape">пост · 1200 × 900</option><option data-i18n="s204" value="stories">сторис · 1080 × 1920</option></select></div></div><p class="privacy-note" data-i18n="s205">данные обрабатываются в вашем браузере.</p>
+</section>
+<aside aria-label="редактор открытки" class="settings-rail" data-i18n-aria-label="s170"><button aria-label="посмотреть открытку" class="compact-view" data-i18n-aria-label="s171" id="compact-view" type="button"><span aria-hidden="true" id="compact-image"></span><span data-i18n="s206">посмотреть открытку ↗</span></button>
+<div aria-label="настройки" class="editor-tabs" data-i18n-aria-label="s172" role="tablist">
+<button aria-controls="panel-data" aria-selected="true" data-i18n="s207" id="tab-data" role="tab" tabindex="0" type="button">данные</button>
+<button aria-controls="panel-text" aria-selected="false" data-i18n="s208" id="tab-text" role="tab" tabindex="-1" type="button">текст</button>
+<button aria-controls="panel-design" aria-selected="false" data-i18n="s209" id="tab-design" role="tab" tabindex="-1" type="button">график</button>
+<span aria-hidden="true" class="tab-indicator" id="tab-indicator"></span>
+</div>
+<section aria-labelledby="tab-data" class="tab-panel" id="panel-data" role="tabpanel">
+<p class="panel-help" data-i18n="s210">замените подписи и значения в таблице. можно добавить от 2 до 20 строк.</p>
+<div class="data-table-wrap"><table class="data-table" id="data-table"><caption class="visually-hidden" data-i18n="s211">редактирование данных открытки</caption><thead id="table-head"></thead><tbody id="table-body"></tbody></table></div>
+<p class="table-scroll-hint" data-i18n="s212" hidden="" id="table-scroll-hint">таблица продолжается справа. прокрутите её по горизонтали.</p><div class="table-actions"><button class="text-button" data-i18n="s213" id="add-row" type="button">+ добавить строку</button><span id="data-summary"></span></div>
+<button class="primary-button apply-button" data-i18n="s214" id="apply-table" type="button">обновить открытку</button>
+<p class="field-hint pending-note" hidden="" id="table-status" role="status"></p><p class="input-error" hidden="" id="data-errors" role="alert"></p><p class="input-warning" hidden="" id="data-warnings" role="status"></p>
+<details class="import-details" id="import-details">
+<summary><span data-i18n="s215">загрузить файл или вставить таблицу</span> <span aria-hidden="true">+</span></summary>
+<div class="import-content">
+<div aria-describedby="drop-help" aria-label="выбрать или перетащить csv или json-файл" class="drop-zone" data-i18n-aria-label="s173" id="drop-zone" role="button" tabindex="0">
+<input accept=".csv,.json,text/csv,application/json" aria-label="выберите csv или json-файл" class="visually-hidden" data-i18n-aria-label="s174" id="file-input" tabindex="-1" type="file"/>
+<span class="drop-zone__title" data-i18n="s25">перетащите файл сюда</span><span data-i18n="s216" id="drop-help">csv или json · до 1 мб</span>
+</div>
+<button class="text-button" data-i18n="s217" id="import-button" type="button">выбрать файл</button>
+<label class="field-label" data-i18n="s218" for="paste-input">или скопируйте ячейки из таблицы</label>
+<textarea aria-describedby="paste-help" class="paste-input" data-i18n-placeholder="s175" id="paste-input" placeholder="день	минуты
+понедельник	32
+вторник	48" rows="4"></textarea>
+<p class="field-hint" data-i18n="s219" id="paste-help">в первой строке нужны названия колонок. подойдут csv, json или ячейки из excel и google sheets.</p>
+<button class="secondary-button" data-i18n="s220" id="paste-button" type="button">использовать эти данные</button>
+</div>
+</details>
+<details class="project-details" id="project-details">
+<summary><span data-i18n="s221">открыть черновик</span> <span aria-hidden="true">+</span></summary>
+<p class="field-hint" data-i18n="s222" id="project-help">черновик json содержит таблицу, текст и настройки. скачивание png, svg или html находится под открыткой.</p>
+<div class="project-actions">
+<button aria-busy="false" aria-describedby="project-help" class="secondary-button" data-i18n="s26" id="open-project" type="button">открыть файл</button>
+</div>
+<input accept=".json,application/json" aria-label="выберите сохранённую открытку" class="visually-hidden" data-i18n-aria-label="s176" id="project-input" tabindex="-1" type="file"/>
+</details>
+</section>
+<section aria-labelledby="tab-design" class="tab-panel" hidden="" id="panel-design" role="tabpanel">
+<p class="input-error" hidden="" id="graph-error" role="status"></p><fieldset class="mode-group"><legend data-i18n="s223">сравнить значения</legend><label><input checked="" name="graph-mode" type="radio" value="bars"/> <span data-i18n="s103">полосы</span></label><label><input name="graph-mode" type="radio" value="dots"/> <span data-i18n="s91">точки</span></label></fieldset><fieldset class="mode-group"><legend data-i18n="s224">показать по датам</legend><label><input name="graph-mode" type="radio" value="timeline"/> <span data-i18n="s225">линия</span></label><label><input name="graph-mode" type="radio" value="calendar"/> <span data-i18n="s92">календарь</span></label></fieldset>
+<select aria-hidden="true" class="select-input visually-hidden" id="mode-select" tabindex="-1"><option data-i18n="s226" value="bars">полосы: сравнить значения</option><option data-i18n="s227" value="dots">точки: сравнить значения</option><option data-i18n="s228" value="timeline">линия: изменения по датам</option><option data-i18n="s229" value="calendar">календарь: записи по дням</option></select>
+<label class="field-label" data-i18n="s230" for="summary-select">итог на открытке</label>
+<select class="select-input" id="summary-select"><option data-i18n="s231" value="total">сумма значений</option><option data-i18n="s232" value="average">среднее значение</option><option data-i18n="s233" value="none">без итога</option></select>
+<label class="field-label" data-i18n="s234" for="order-select">порядок строк</label>
+<select class="select-input" id="order-select"><option data-i18n="s235" value="input">как в таблице</option><option data-i18n="s236" value="ascending">от меньшего к большему</option><option data-i18n="s237" value="descending">от большего к меньшему</option></select>
+<details class="column-details" open=""><summary><span data-i18n="s238">колонки и пропуски</span> <span aria-hidden="true">+</span></summary>
+<label class="field-label" data-i18n="s239" for="category-select">подписи</label><select aria-label="колонка подписей" class="select-input" data-i18n-aria-label="s177" id="category-select"></select>
+<label class="field-label" data-i18n="s240" for="value-select">значения</label><select aria-label="колонка значений" class="select-input" data-i18n-aria-label="s178" id="value-select"></select>
+<label class="field-label" data-i18n="s241" for="date-select">даты</label><select aria-label="колонка дат" class="select-input" data-i18n-aria-label="s179" id="date-select"></select>
+<label class="check-row"><input checked="" id="missing-toggle" type="checkbox"/><span data-i18n="s242">показывать пустые значения</span></label>
+</details>
+</section>
+<section aria-labelledby="tab-text" class="tab-panel" hidden="" id="panel-text" role="tabpanel">
+<label class="field-label" data-i18n="s243" for="title-input">заголовок</label><input autocomplete="off" class="text-input text-input--title" id="title-input" maxlength="120" type="text"/>
+<label class="field-label" data-i18n="s244" for="caption-input">заметка под заголовком</label><textarea class="text-input text-input--area" id="caption-input" maxlength="300" rows="4"></textarea>
+<label class="field-label" data-i18n="s245" for="unit-input">единицы измерения</label><input autocomplete="off" class="text-input" data-i18n-placeholder="s180" id="unit-input" maxlength="20" placeholder="мин, ₽, км" type="text"/>
+<p class="field-hint" data-i18n="s246">текст сразу появится на открытке.</p>
+</section>
+<div class="draft-bar"><button class="text-button" data-i18n="s247" id="reset-draft" type="button">вернуть пример чтения</button></div>
+</aside>
+</div>
+</main>
+<footer class="site-footer"><span>data postcard</span><a href="https://github.com/chebaturkin/data-postcard" rel="noopener noreferrer" target="_blank"><span data-i18n="s248">код и описание на github</span> <span aria-hidden="true">↗</span></a></footer>
+<dialog aria-labelledby="viewer-title" id="postcard-viewer"><div class="viewer-toolbar"><h2 data-i18n="s249" id="viewer-title">готовая открытка</h2><button class="secondary-button" data-i18n="s250" id="close-viewer" type="button">вернуться к редактору</button></div><label class="viewer-scale" for="viewer-scale"><span data-i18n="s251">масштаб</span> <select class="select-input" id="viewer-scale"><option data-i18n="s252" value="fit">вместить целиком</option><option data-i18n="s253" value="actual">100% · читать детали</option></select></label><p class="field-hint viewer-help" data-i18n="s254">в масштабе 100% можно прокручивать открытку по горизонтали и вертикали.</p><div class="viewer-image" id="viewer-image"></div><div class="viewer-exports"><button class="primary-button" data-export="png" data-i18n="s195" type="button">скачать png</button><button class="secondary-button" data-export="svg" type="button">svg</button><button class="secondary-button" data-export="html" type="button">html</button></div></dialog>
+<script src="src/app.js?v=20261014c" type="module"></script>
+</body>
 </html>

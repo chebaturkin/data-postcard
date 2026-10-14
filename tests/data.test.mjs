@@ -1,3 +1,5 @@
+import { setLocale } from '../i18n.js';
+setLocale('ru');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { parseCsv, parseJson, parseText, inferColumns, validateDataset, normalizeDataset } from '../src/data.js';

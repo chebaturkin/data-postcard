@@ -223,3 +223,17 @@ html[data-size="stories"] .postcard-paper{max-width:460px}.preview-meta{font-siz
 .intro{padding:0}.mode-group{border:0;padding:0;margin:0 0 16px;display:flex;gap:18px}.mode-group legend{font-size:14px;color:var(--muted);margin-bottom:6px}.mode-group label{display:flex;align-items:center;min-height:44px;gap:8px;font-size:16px}.mode-group input{width:20px;height:20px;accent-color:var(--accent)}
 .viewer-scale{display:flex;align-items:center;gap:12px;font-size:14px;margin-bottom:16px}.viewer-scale select{width:auto;font-size:14px}.viewer-image{max-height:65dvh}.viewer-image[data-scale="actual"] svg{width:1200px;min-width:1200px;max-width:none}.viewer-image[data-scale="actual"] svg[viewBox="0 0 1080 1920"]{width:1080px;min-width:1080px;max-width:none}.viewer-exports{display:flex;gap:10px;margin-top:16px}.tab-panel{padding-top:0}.settings-rail{border-top:0}.draft-bar button{font-size:12px}.data-table-wrap::after{content:''}.table-scroll-hint{font-size:12px;color:var(--muted)}
 .visually-hidden{width:1px!important;height:1px!important;max-width:1px!important;min-width:0!important;padding:0!important}
+
+/* Language is a small part of the existing masthead, in its own type and ink. */
+.language-control{display:inline-flex;align-items:center;gap:2px;flex-shrink:0;font:inherit;font-size:12px;letter-spacing:.04em;color:inherit;white-space:nowrap}
+.language-control button{appearance:none;border:0;border-radius:0;background:none;color:inherit;font:inherit;letter-spacing:inherit;cursor:pointer;min-width:30px;min-height:44px;padding:7px 3px;opacity:.52;text-underline-offset:5px}
+.language-control button[aria-pressed="true"]{opacity:1;text-decoration:underline;text-decoration-thickness:1px}
+.language-control button:hover{opacity:1}
+.language-control button:focus-visible{outline:2px solid var(--accent);outline-offset:4px}
+.language-control>span{opacity:.35}
+.masthead{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:24px}
+.masthead .brand{white-space:nowrap}
+@media(max-width:559px){
+  .masthead{grid-template-columns:minmax(0,1fr) auto;gap:0 12px;padding-block:14px}
+  .masthead .quiet-link{grid-column:1/-1;justify-self:end;min-height:28px;display:flex;align-items:center}
+}

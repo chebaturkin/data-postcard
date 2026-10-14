@@ -1,3 +1,4 @@
+import { t, getLocale, localeTag, mountLocale, translateMessage, setLocale } from '../i18n.js';
 /**
  * The small palette used by the postcard scene.  Values are deliberately
  * solid inks so the exported SVG still reads well on a cheap printer.
@@ -5,7 +6,7 @@
 export const THEMES = {
   // Keep the historic theme names because they are part of the UI contract.
   night: {
-    label: 'ночной атлас',
+    get label() { return t("s121"); },
     bg: '#252b21',
     paper: '#252b21',
     ink: '#f7f3e8',
@@ -16,7 +17,7 @@ export const THEMES = {
     soft: '#b2bf8f',
   },
   paper: {
-    label: 'бумажная статистика',
+    get label() { return t("s122"); },
     bg: '#eee9dc',
     paper: '#f7f3e8',
     ink: '#252b21',
@@ -27,7 +28,7 @@ export const THEMES = {
     soft: '#697546',
   },
   court: {
-    label: 'спортплощадка',
+    get label() { return t("s123"); },
     bg: '#e7e8dd',
     paper: '#f1f2e8',
     ink: '#252b21',
@@ -38,7 +39,7 @@ export const THEMES = {
     soft: '#4e6c63',
   },
   archive: {
-    label: 'архив',
+    get label() { return t("s124"); },
     bg: '#e9e1d5',
     paper: '#f4ede2',
     ink: '#252b21',
@@ -49,7 +50,7 @@ export const THEMES = {
     soft: '#697546',
   },
   ink: {
-    label: 'чёрно-белая печать',
+    get label() { return t("s125"); },
     bg: '#ffffff',
     paper: '#ffffff',
     ink: '#111111',

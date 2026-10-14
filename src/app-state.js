@@ -1,3 +1,4 @@
+import { t, getLocale, localeTag, mountLocale, translateMessage, setLocale } from '../i18n.js';
 /**
  * Pure helpers used by the controller to choose a useful initial state and
  * keep the visible status copy in Russian.  They deliberately have no DOM or
@@ -5,18 +6,18 @@
  */
 
 const MODE_LABELS = Object.freeze({
-  bars: 'полосы',
-  dots: 'точки',
-  calendar: 'календарная сетка',
-  timeline: 'временной маршрут'
+  get bars() { return t("s103"); },
+  get dots() { return t("s91"); },
+  get calendar() { return t("s104"); },
+  get timeline() { return t("s105"); }
 });
 
 const SOURCE_LABELS = Object.freeze({
-  'sample reading': 'чтение',
-  'sample weather': 'погода',
-  'sample sport': 'спорт',
-  'pasted data': 'вставленные строки',
-  'pasted': 'вставленные строки'
+  get 'sample reading'() { return t("s106"); },
+  get 'sample weather'() { return t("s107"); },
+  get 'sample sport'() { return t("s108"); },
+  get 'pasted data'() { return t("s42"); },
+  get 'pasted'() { return t("s42"); }
 });
 
 export const MAX_FILE_BYTES = 1024 * 1024;
@@ -48,7 +49,7 @@ export function chooseDefaultMode(columns = []) {
 export function modeLabel(mode) {
   return Object.prototype.hasOwnProperty.call(MODE_LABELS, mode)
     ? MODE_LABELS[mode]
-    : 'представление';
+    : t("s109");
 }
 
 /**
@@ -57,7 +58,7 @@ export function modeLabel(mode) {
  */
 export function sourceLabel(source) {
   const value = typeof source === 'string' ? source.trim() : '';
-  if (!value) return 'ввод вручную';
+  if (!value) return t("s110");
   const normalized = value.toLowerCase();
   return Object.prototype.hasOwnProperty.call(SOURCE_LABELS, normalized)
     ? SOURCE_LABELS[normalized]
@@ -75,9 +76,9 @@ export function isSupportedFile(file) {
 
 /** Return a user-facing correction for a file that cannot be read safely. */
 export function fileImportError(file, maxBytes = MAX_FILE_BYTES) {
-  if (!file) return 'выберите csv или json-файл.';
-  if (!isSupportedFile(file)) return 'поддерживаются только файлы csv и json.';
-  if (Number.isFinite(file.size) && file.size > maxBytes) return 'файл слишком большой: максимум 1 мб.';
+  if (!file) return t("s111");
+  if (!isSupportedFile(file)) return t("s112");
+  if (Number.isFinite(file.size) && file.size > maxBytes) return t("s113");
   return '';
 }
 
@@ -114,7 +115,7 @@ export function sortRowsForDisplay(rows = [], { order = 'input', key = '', parse
         && Number.isFinite(right.parsed);
       const comparison = bothNumbers
         ? left.parsed - right.parsed
-        : String(left.raw ?? '').localeCompare(String(right.raw ?? ''), 'ru', { numeric: true, sensitivity: 'base' });
+        : String(left.raw ?? '').localeCompare(String(right.raw ?? ''), getLocale(), { numeric: true, sensitivity: 'base' });
       return comparison === 0 ? left.index - right.index : comparison * direction;
     })
     .map(({ row }) => row);

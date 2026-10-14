@@ -60,7 +60,7 @@ export async function checkProjects({ page, context, url, check }) {
   check(await page.locator('#open-project').getAttribute('aria-busy') === 'false', 'cancelled reading clears its loading state');
   await page.locator('#apply-table').click();
 
-  const noStorage = await context.browser().newContext();
+  const noStorage = await context.browser().newContext({ locale: 'ru-RU' });
   await noStorage.addInitScript(() => {
     Storage.prototype.setItem = () => { throw new Error('storage unavailable'); };
   });

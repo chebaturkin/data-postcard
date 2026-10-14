@@ -1,3 +1,4 @@
+import { t, getLocale, localeTag, mountLocale, translateMessage, setLocale } from '../i18n.js';
 import { validateDataset } from './data.js';
 
 export const DRAFT_KEY = 'data-postcard-draft-v1';
@@ -19,7 +20,7 @@ export function tableErrorCells(headers, errors = []) {
     } else if (error.code === 'missing-header' && Number.isInteger(error.column)) columnIndex = error.column - 1;
     else if (error.code === 'duplicate-header' && Number.isInteger(error.index)) columnIndex = error.index - 1;
     if (columnIndex < 0 || columnIndex >= labels.length) return [];
-    const message = rowIndex === null ? error.message : error.message.replace(/^строка \d+/, `строка ${rowIndex + 1}`);
+    const message = rowIndex === null ? error.message : error.message.replace(/^(?:строка|row) \d+/, t("s1", { p0: rowIndex + 1 }));
     return [{ rowIndex, columnIndex, message }];
   });
 }
@@ -36,7 +37,7 @@ export function serializeDraft(state) {
   const settings = {};
   for (const key of [...Object.keys(DRAFT_CHOICES), 'title', 'caption', 'unit', 'categoryKey', 'valueKey', 'dateKey', 'sourceLabel', 'sample', 'showMissing']) settings[key] = state[key];
   const text = JSON.stringify({ version: 1, headers: state.dataset.headers, rows: state.dataset.rawRows || state.dataset.rows, settings, pendingTable: state.pendingTable });
-  if (new TextEncoder().encode(text).byteLength > 1024 * 1024) throw new Error('черновик слишком большой: максимум 1 мб.');
+  if (new TextEncoder().encode(text).byteLength > 1024 * 1024) throw new Error(t("s120"));
   return text;
 }
 

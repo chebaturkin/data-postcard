@@ -1,3 +1,4 @@
+import { t, getLocale, localeTag, mountLocale, translateMessage, setLocale } from '../i18n.js';
 const UNSAFE_FILENAME_CHARACTERS = /[<>:\"/\\|?*\u0000-\u001f\u007f]/g;
 
 function cleanFilenamePart(value) {
@@ -146,8 +147,8 @@ export function standaloneHtml(svgText, title = 'data postcard', metadata = {}) 
   const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
   const headers = Array.isArray(metadata.headers) ? metadata.headers : [];
   const rows = Array.isArray(metadata.rows) ? metadata.rows : [];
-  const table = headers.length ? `<details><summary>данные открытки</summary><div class="table-scroll"><table><thead><tr>${headers.map(header => `<th scope="col">${escape(header)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map(header => `<td>${escape(row[header])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : '';
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html{background:#f5f2ec;color:#252b21;font:16px/1.5 Arial,sans-serif}body{margin:0;padding:24px}main{max-width:1200px;margin:auto}svg{display:block;width:100%;height:auto;border-radius:24px;box-shadow:0 8px 28px rgba(37,43,33,.06)}details{margin-top:24px}summary{min-height:44px;cursor:pointer}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:12px;border-bottom:1px solid #d7d5c7}summary:focus-visible{outline:2px solid #35566e}@media(max-width:500px){body{padding:16px}}</style></head><body><main>${safeSvgText}${table}</main><script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
+  const table = headers.length ? t("s102", { p0: headers.map(header => `<th scope="col">${escape(header)}</th>`).join(''), p1: rows.map(row => `<tr>${headers.map(header => `<td>${escape(row[header])}</td>`).join('')}</tr>`).join('') }) : '';
+  return `<!doctype html><html lang="${getLocale()}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html{background:#f5f2ec;color:#252b21;font:16px/1.5 Arial,sans-serif}body{margin:0;padding:24px}main{max-width:1200px;margin:auto}svg{display:block;width:100%;height:auto;border-radius:24px;box-shadow:0 8px 28px rgba(37,43,33,.06)}details{margin-top:24px}summary{min-height:44px;cursor:pointer}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:12px;border-bottom:1px solid #d7d5c7}summary:focus-visible{outline:2px solid #35566e}@media(max-width:500px){body{padding:16px}}</style></head><body><main>${safeSvgText}${table}</main><script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
 }
 
 export function exportStandaloneHtml(svgText, title = 'data postcard', filename = 'data-postcard.html', metadata = {}) {

@@ -31,7 +31,7 @@ try {
   }
   for (let i = 0; i < 100; i += 1) { try { if ((await fetch(url)).ok) break; } catch {} await delay(50); }
   browser = await chromium.launch({ args: ['--disable-gpu'] });
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
+  const context = await browser.newContext({ locale: 'ru-RU', viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });

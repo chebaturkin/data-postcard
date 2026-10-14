@@ -1,3 +1,5 @@
+import { setLocale } from '../i18n.js';
+setLocale('ru');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { filterMissingRows, chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, isSupportedFile, fileImportError, MAX_FILE_BYTES } from '../src/app-state.js';

@@ -1,3 +1,5 @@
+import { setLocale } from '../i18n.js';
+setLocale('ru');
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { datasetFromTable, serializeDraft, readDraft } from '../src/editor.js';

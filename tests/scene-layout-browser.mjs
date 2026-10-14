@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { buildScene } from '../src/scene.js';
 const {chromium}=await import(process.env.PLAYWRIGHT_MODULE||'playwright');
 const browser=await chromium.launch({args:['--disable-gpu']});
-const page=await browser.newPage();
+const page=await browser.newPage({ locale: 'ru-RU' });
 try {
   const fixtures=[
     {name:'extreme comparison values',rows:[{name:'один',value:1e30},{name:'два',value:2e30}],state:{mode:'bars',categoryKey:'name',valueKey:'value',title:'значения',summary:'total'},comparisonValues:true},
