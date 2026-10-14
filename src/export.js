@@ -143,7 +143,11 @@ export function standaloneHtml(svgText, title = 'data postcard', metadata = {}) 
     .replace(/</g, '\\u003c')
     .replace(/>/g, '\\u003e')
     .replace(/&/g, '\\u0026');
-  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html,body{margin:0;background:#f5f2ec;min-height:100%;display:grid;place-items:center}svg{display:block;max-width:100vw;max-height:100vh;height:auto;border-radius:18px;box-shadow:0 12px 40px rgba(0,0,0,.12)}</style></head><body>${safeSvgText}<script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
+  const escape = value => String(value ?? '').replace(/[&<>"']/g, char => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[char]));
+  const headers = Array.isArray(metadata.headers) ? metadata.headers : [];
+  const rows = Array.isArray(metadata.rows) ? metadata.rows : [];
+  const table = headers.length ? `<details><summary>данные открытки</summary><div class="table-scroll"><table><thead><tr>${headers.map(header => `<th scope="col">${escape(header)}</th>`).join('')}</tr></thead><tbody>${rows.map(row => `<tr>${headers.map(header => `<td>${escape(row[header])}</td>`).join('')}</tr>`).join('')}</tbody></table></div></details>` : '';
+  return `<!doctype html><html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${safeTitle}</title><style>html{background:#f5f2ec;color:#252b21;font:16px/1.5 Arial,sans-serif}body{margin:0;padding:24px}main{max-width:1200px;margin:auto}svg{display:block;width:100%;height:auto;border-radius:24px;box-shadow:0 8px 28px rgba(37,43,33,.06)}details{margin-top:24px}summary{min-height:44px;cursor:pointer}.table-scroll{overflow:auto}table{border-collapse:collapse;width:100%;text-align:left}th,td{padding:12px;border-bottom:1px solid #d7d5c7}summary:focus-visible{outline:2px solid #35566e}@media(max-width:500px){body{padding:16px}}</style></head><body><main>${safeSvgText}${table}</main><script type="application/json" id="postcard-data">${embedded}</script></body></html>`;
 }
 
 export function exportStandaloneHtml(svgText, title = 'data postcard', filename = 'data-postcard.html', metadata = {}) {

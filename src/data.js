@@ -249,7 +249,7 @@ export function parseJson(text) {
   } catch (error) {
     return {
       headers: [], rows: [], rowLengths: [],
-      errors: [issue('invalid-json', `json не удалось прочитать: ${error.message}`)], warnings: []
+      errors: [issue('invalid-json', 'json не удалось прочитать. проверьте кавычки, запятые и скобки.')], warnings: []
     };
   }
 

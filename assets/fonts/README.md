@@ -1,0 +1,1 @@
+шрифты golos text и literata получены из официального каталога google fonts (https://github.com/google/fonts/tree/main/ofl). локальные файлы содержат латиницу, кириллицу, знаки пунктуации и валют. лицензии sil open font license сохранены рядом. scene-fonts.js включает те же woff2 и метрики, поэтому экспорт не обращается к сети.

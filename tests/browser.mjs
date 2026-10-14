@@ -3,6 +3,9 @@ import { spawn } from 'node:child_process';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import { setTimeout as delay } from 'node:timers/promises';
+import { checkMotion } from './motion-browser.mjs';
+import { checkDesk } from './desk-browser.mjs';
+import { checkProjects } from './project-browser.mjs';
 
 const { chromium } = await import(process.env.PLAYWRIGHT_MODULE || 'playwright');
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -27,7 +30,7 @@ try {
     });
   }
   for (let i = 0; i < 100; i += 1) { try { if ((await fetch(url)).ok) break; } catch {} await delay(50); }
-  browser = await chromium.launch();
+  browser = await chromium.launch({ args: ['--disable-gpu'] });
   const context = await browser.newContext({ viewport: { width: 1440, height: 1100 }, acceptDownloads: true });
   const page = await context.newPage();
   page.on('pageerror', error => errors.push(error.message));
@@ -39,6 +42,10 @@ try {
   check(await page.locator('#sample-select').count() === 1, 'examples are available in the data editor');
   await page.locator('#table-body tr').first().locator('input').nth(1).fill('99');
   check((await page.locator('#draft-status').textContent()).includes('ещё не применены'), 'unapplied table edits are not reported as saved');
+  const latestDownload = page.waitForEvent('download');
+  await page.locator('#export-svg').click();
+  const latestSvg = await readFile(await (await latestDownload).path(), 'utf8');
+  check(latestSvg.includes('405 мин'), 'download applies the latest table values');
   await page.locator('#apply-table').click();
   check((await page.locator('#postcard-preview').textContent()).includes('405 мин'), 'table edits update the total');
   const previous = await page.locator('#postcard-preview').innerHTML();
@@ -46,6 +53,23 @@ try {
   await page.locator('#apply-table').click();
   check(await page.locator('#data-errors').isVisible(), 'invalid cells show an error');
   check(await page.locator('#postcard-preview').innerHTML() === previous, 'invalid edits preserve the preview');
+  check(await page.locator('#table-body tr').first().locator('input').nth(1).getAttribute('aria-invalid') === 'true', 'invalid value is marked in its cell');
+  check(await page.locator('#table-body tr').first().locator('input').nth(1).evaluate(input => input === document.activeElement), 'first invalid cell receives keyboard focus');
+  check((await page.locator('#data-errors').textContent()).startsWith('строка 1,'), 'table errors use visible data-row numbers');
+  const blockedDownloads = [];
+  const recordBlockedDownload = download => blockedDownloads.push(download);
+  page.on('download', recordBlockedDownload);
+  await page.locator('#tab-text').click();
+  await page.locator('#export-html').click();
+  check((await page.locator('#render-status').textContent()).includes('проверьте таблицу'), 'invalid table stops export with a correction');
+  check(await page.locator('#tab-data').getAttribute('aria-selected') === 'true', 'blocked export opens the data correction panel');
+  await page.waitForTimeout(100);
+  check(blockedDownloads.length === 0, 'invalid edits cannot download a stale postcard');
+  page.off('download', recordBlockedDownload);
+  await page.locator('#table-body tr').first().locator('input').nth(1).fill('99');
+  check(await page.locator('#table-body tr').first().locator('input').nth(1).getAttribute('aria-invalid') === null, 'editing clears the old cell marker');
+  await page.locator('#apply-table').click();
+  check(await page.locator('#data-table [aria-invalid="true"]').count() === 0, 'valid table clears all cell markers');
   await page.locator('#reset-draft').click();
   await page.locator('#tab-text').click();
   await page.locator('#title-input').fill('итоги <недели>');
@@ -61,8 +85,8 @@ try {
   await page.locator('#tab-design').click();
   await page.locator('#summary-select').selectOption('none');
   check(!(await page.locator('#postcard-preview').textContent()).includes('в среднем'), 'summary can be hidden');
-  await page.locator('#mode-select').selectOption('calendar');
-  check((await page.locator('#postcard-preview').textContent()).includes('нужна колонка с датой'), 'missing dates have a correction');
+  await page.locator('[name=\"graph-mode\"][value=\"' + 'calendar' + '\"]').check();
+  check((await page.locator('#graph-error').textContent()).includes('нужна колонка с датой'), 'missing dates have a correction');
   await page.locator('#tab-data').click();
   await page.locator('#import-details summary').click();
   await page.locator('#paste-input').fill('категория\tсумма\nеда\t1200\nтранспорт\t600');
@@ -82,14 +106,14 @@ try {
   await page.locator('#file-input').setInputFiles({ name: 'notes.json', mimeType: 'application/json', buffer: Buffer.from('[{"дата":"2026-10-01","значение":3},{"дата":"2026-10-02","значение":4}]') });
   check(await page.locator('#mode-select').inputValue() === 'timeline', 'dated json chooses a line');
   await page.locator('#tab-design').click();
-  await page.locator('.column-details summary').click();
+
   await page.locator('#date-select').selectOption('');
   check(await page.locator('#date-select').inputValue() === '', 'unused date selection remains unused');
-  check((await page.locator('#postcard-preview').textContent()).includes('нужна колонка с датой'), 'unused date selection also clears the chart');
+  check((await page.locator('#graph-error').textContent()).includes('нужна колонка с датой'), 'unused date selection also clears the chart');
   await page.locator('#date-select').selectOption('дата');
   for (const mode of ['bars', 'dots', 'timeline', 'calendar']) {
-    await page.locator('#mode-select').selectOption(mode);
-    check(!/NaN|undefined|нужна колонка|нет числовых/.test(await page.locator('#postcard-preview').textContent()), `${mode} renders dated data`);
+    await page.locator('[name=\"graph-mode\"][value=\"' + mode + '\"]').check();
+    check(!/NaN|undefined|нужна колонка|нет числовых/.test((await page.locator('#postcard-preview text, #postcard-preview title, #postcard-preview desc').allTextContents()).join('')), `${mode} renders dated data`);
   }
   for (const theme of ['paper', 'archive', 'court', 'night', 'ink']) {
     await page.locator('#theme-select').selectOption(theme);
@@ -103,11 +127,12 @@ try {
   check(await page.locator('#table-body tr').count() === 7, 'delete row works');
   await page.locator('#tab-data').focus();
   await page.keyboard.press('ArrowRight');
-  check(await page.locator('#tab-design').getAttribute('aria-selected') === 'true', 'tabs work with arrow keys');
+  check(await page.locator('#tab-text').getAttribute('aria-selected') === 'true', 'tabs work with arrow keys');
   await page.locator('#reset-draft').click();
   await page.locator('#table-head input').nth(1).fill('день');
   await page.locator('#apply-table').click();
   check((await page.locator('#data-errors').textContent()).includes('дублирующееся'), 'duplicate table headers report errors');
+  check(await page.locator('#table-head input').nth(1).getAttribute('aria-invalid') === 'true', 'duplicate header is marked in the header field');
   await page.locator('#reset-draft').click();
 
   for (const format of ['svg', 'png', 'html']) {
@@ -165,6 +190,9 @@ try {
     await page.locator('#tab-data').click();
     if (screenshots && width === 390) { await page.evaluate(() => { document.activeElement?.blur(); window.scrollTo({ top: 0, behavior: 'instant' }); }); await page.screenshot({ path: root + 'docs/images/mobile.png', fullPage: true, animations: 'disabled' }); }
   }
+  await checkDesk({ page, url, check });
+  await checkProjects({ page, context, url, check });
+  await checkMotion({ page, context, url, root, check });
   await page.goto(url + '/404.html');
   check(await page.getByRole('link', { name: 'открыть редактор' }).count() === 1, '404 offers a route back');
   check(errors.length === 0, 'no browser console or page errors: ' + errors.join('; '));

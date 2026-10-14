@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, isSupportedFile, fileImportError, MAX_FILE_BYTES } from '../src/app-state.js';
+import { filterMissingRows, chooseDefaultMode, modeLabel, sourceLabel, canActivateDataset, sortRowsForDisplay, isSupportedFile, fileImportError, MAX_FILE_BYTES } from '../src/app-state.js';
 
 test('chooseDefaultMode selects a timeline only for date and number columns', () => {
   assert.equal(chooseDefaultMode([{ type: 'date' }, { type: 'number' }]), 'timeline');
@@ -59,4 +59,9 @@ test('file import policy accepts supported files and rejects unsafe or oversized
   assert.equal(isSupportedFile({ name: 'notes.csv', type: 'application/javascript', size: 12 }), false);
   assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: MAX_FILE_BYTES + 1 }), 'файл слишком большой: максимум 1 мб.');
   assert.equal(fileImportError({ name: 'notes.csv', type: 'text/csv', size: 12 }), '');
+});
+
+test('hiding blanks retains text events and numeric zero', () => {
+  const rows = [{ value: 'встреча' }, { value: 0 }, { value: '' }, { value: null }, { value: '  ' }];
+  assert.deepEqual(filterMissingRows(rows, 'value', false), rows.slice(0, 2));
 });

@@ -11,9 +11,9 @@ export const THEMES = {
     ink: '#f7f3e8',
     muted: '#c4c8bb',
     line: '#596254',
-    accent: '#ba492e',
-    accentAlt: '#697546',
-    soft: '#697546',
+    accent: '#d28a68',
+    accentAlt: '#b2bf8f',
+    soft: '#b2bf8f',
   },
   paper: {
     label: 'бумажная статистика',

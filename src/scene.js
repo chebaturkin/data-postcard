@@ -1,469 +1,258 @@
 import { parseDate, parseNumber } from './data.js';
 import { THEMES } from './themes.js';
+import { FONT_METRICS, EMBEDDED_FONT_CSS } from './scene-fonts.js';
 
-const esc = (value) => String(value ?? '').replace(/[<>&"']/g, (char) => ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;', "'": '&apos;' }[char]));
-const clamp = (value, min, max) => Math.min(max, Math.max(min, value));
-const safeText = (value, fallback = '') => {
-  const text = String(value ?? '').trim();
-  return text || fallback;
-};
-const number = (value) => parseNumber(value);
-const asDate = (value) => {
-  const parsed = parseDate(value);
-  if (!parsed) return null;
-  const date = parsed instanceof Date ? parsed : new Date(`${parsed}T00:00:00Z`);
-  return Number.isNaN(date.valueOf()) ? null : date;
-};
-const isoDate = (date) => date ? date.toISOString().slice(0, 10) : '';
-const ruNumber = new Intl.NumberFormat('ru-RU', { maximumFractionDigits: 1 });
-const formatNumber = (value) => value === null || value === undefined || Number.isNaN(value) ? '—' : ruNumber.format(value);
-const formatValue = (value, unit = '') => {
-  if (value === null || value === undefined || Number.isNaN(value)) return '—';
-  return `${formatNumber(value)}${safeText(unit) ? ` ${safeText(unit)}` : ''}`;
-};
-const russianPlural = (count, one, few, many) => {
-  const value = Math.abs(Number(count)) % 100;
-  if (value >= 11 && value <= 14) return many;
-  const last = value % 10;
-  if (last === 1) return one;
-  if (last >= 2 && last <= 4) return few;
-  return many;
-};
-const monthFormatter = new Intl.DateTimeFormat('ru-RU', { month: 'long', year: 'numeric', timeZone: 'UTC' });
-const dateFormatter = new Intl.DateTimeFormat('ru-RU', { day: '2-digit', month: 'short', timeZone: 'UTC' });
-const dateLabel = (date) => date ? dateFormatter.format(date).replace('.', '') : '';
-const monthLabel = (date) => {
-  const value = monthFormatter.format(date).replace('.', '');
-  return value.toLowerCase();
-};
+const esc = value => String(value ?? '').replace(/[<>&"']/g, char => ({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;',"'":'&apos;'}[char]));
+const clean = value => String(value ?? '').trim();
+const clamp = (n,a,b) => Math.max(a,Math.min(b,n));
+const num = parseNumber;
+const nf = new Intl.NumberFormat('ru-RU',{maximumFractionDigits:1});
+const scientific = new Intl.NumberFormat('ru-RU',{notation:'scientific',maximumFractionDigits:3});
+// Avoid a forty-character value column or a non-zero value labelled as zero.
+// Exact source values remain in each mark's title and the accessible description.
+const fmt = value => value === null ? '—' : (Math.abs(value)>=1e12 || (value!==0 && Math.abs(value)<.05) ? scientific.format(value).replace('E','e') : nf.format(value));
+const date = value => { const d=parseDate(value); return d ? new Date(d instanceof Date ? d : `${d}T00:00:00Z`) : null; };
+const iso = d => d.toISOString().slice(0,10);
+const shortDate = d => new Intl.DateTimeFormat('ru-RU',{day:'2-digit',month:'short',timeZone:'UTC'}).format(d).replace('.','');
+const monthDate = d => new Intl.DateTimeFormat('ru-RU',{month:'long',year:'numeric',timeZone:'UTC'}).format(d).toLowerCase().replace('.','');
+const plural = n => n%100>=11&&n%100<=14 ? 'строк' : n%10===1 ? 'строка' : n%10>=2&&n%10<=4 ? 'строки' : 'строк';
+const attrs = obj => Object.entries(obj).map(([k,v])=>`${k}="${esc(v)}"`).join(' ');
+const text = (x,y,value,obj={}) => `<text x="${x}" y="${y}" ${attrs(obj)}>${esc(value)}</text>`;
+const line = (x1,y1,x2,y2,color,extra='') => `<line x1="${x1}" y1="${y1}" x2="${x2}" y2="${y2}" stroke="${color}" ${extra}/>`;
+const style = (theme,size=28,extra={}) => ({class:'golos',fill:theme.ink,'font-size':size,...extra});
+const widthOf = (value,size=28,font='golos-text') => [...String(value)].reduce((sum,c)=>sum+(FONT_METRICS[font][c] ?? 1.1),0)*size*1.04;
 
-const FONT_CSS = `
-  .literata { font-family: 'Literata', Georgia, 'Times New Roman', serif; }
-  .golos { font-family: 'Golos Text', 'Trebuchet MS', Arial, sans-serif; }
-  .mono { font-family: 'Golos Text', 'IBM Plex Mono', Menlo, monospace; font-variant-numeric: tabular-nums; }
-`;
-
-function attrs(style = {}) {
-  return Object.entries(style).map(([key, value]) => `${key}="${esc(value)}"`).join(' ');
-}
-
-function text(x, y, content, style = {}) {
-  return `<text x="${x}" y="${y}" ${attrs(style)}>${esc(content)}</text>`;
-}
-
-function multilineText(x, y, lines, style = {}, lineHeight = 24) {
-  const safeLines = Array.isArray(lines) && lines.length ? lines : [''];
-  const tspans = safeLines.map((line, index) => `<tspan x="${x}" dy="${index === 0 ? 0 : lineHeight}">${esc(line)}</tspan>`).join('');
-  return `<text x="${x}" y="${y}" ${attrs(style)}>${tspans}</text>`;
-}
-
-function wrapText(value, maxChars, maxLines = 3) {
-  const source = safeText(value);
-  if (!source) return [];
-  const words = source.split(/\s+/).filter(Boolean);
-  const lines = [];
-  let line = '';
-  words.forEach((word) => {
-    // Break unusually long pasted words so they cannot run through the page.
-    const chunks = word.length > maxChars ? word.match(new RegExp(`.{1,${Math.max(4, maxChars - 1)}}`, 'g')) || [word] : [word];
-    chunks.forEach((chunk) => {
-      if (!line) line = chunk;
-      else if ((line.length + 1 + chunk.length) <= maxChars) line += ` ${chunk}`;
-      else { lines.push(line); line = chunk; }
-    });
-  });
-  if (line) lines.push(line);
-  if (lines.length <= maxLines) return lines;
-  const visible = lines.slice(0, maxLines);
-  visible[maxLines - 1] = `${visible[maxLines - 1].replace(/…$/, '').slice(0, Math.max(1, maxChars - 1))}…`;
-  return visible;
-}
-
-function shorten(value, maxChars = 22) {
-  const source = safeText(value, 'без названия');
-  if (source.length <= maxChars) return source;
-  return `${source.slice(0, Math.max(1, maxChars - 1)).trimEnd()}…`;
-}
-
-function baseDefs(theme) {
-  return `<defs>
-    <pattern id="missing-hatch" width="10" height="10" patternUnits="userSpaceOnUse">
-      <path d="M-2 2L2 -2M0 10L10 0M8 12L12 8" stroke="${theme.accent}" stroke-width="1" opacity=".45"/>
-    </pattern>
-    <pattern id="paper-lines" width="36" height="36" patternUnits="userSpaceOnUse">
-      <path d="M0 35.5H36" stroke="${theme.ink}" stroke-width=".6" opacity=".035"/>
-    </pattern>
-  </defs>`;
-}
-
-function metricSummary(rows, valueKey, unit) {
-  const values = rows.map((row) => number(row?.[valueKey])).filter((value) => value !== null);
-  if (!values.length) return '';
-  const total = values.reduce((sum, value) => sum + value, 0);
-  const mean = total / values.length;
-  return { count: values.length, total, mean, unit: safeText(unit) };
-}
-
-function renderHeader({ state, theme, width, margin, rows, valueKey, unit }) {
-  const stories = width < 1100;
-  const summary = state.summary === 'none' ? null : metricSummary(rows, valueKey, unit);
-  const summaryWidth = stories ? 270 : 250;
-  const titleWidth = width - margin * 2 - (summary ? summaryWidth + 26 : 0);
-  const titleChars = clamp(Math.floor(titleWidth / (stories ? 27 : 30)), 18, 34);
-  const titleLines = wrapText(state.title, titleChars, 2);
-  const titleY = stories ? 154 : 112;
-  const titleSize = stories ? 58 : 58;
-  const titleLineHeight = stories ? 72 : 68;
-  const captionChars = clamp(Math.floor((width - margin * 2) / 19), 38, 78);
-  const captionLines = wrapText(state.caption, captionChars, stories ? 3 : 2);
-  const captionY = titleY + Math.max(1, titleLines.length) * titleLineHeight + 8;
-  const captionLineHeight = 25;
-  const ruleY = captionY + Math.max(1, captionLines.length) * captionLineHeight + 25;
-  const right = width - margin;
-  const summaryX = right - summaryWidth;
-  let output = multilineText(margin, titleY, titleLines.length ? titleLines : ['без названия'], {
-    class: 'literata', fill: theme.ink, 'font-size': titleSize, 'font-weight': 500, 'letter-spacing': '-1.1',
-  }, titleLineHeight);
-  if (captionLines.length) output += multilineText(margin + 2, captionY, captionLines, {
-    class: 'golos', fill: theme.muted, 'font-size': stories ? 19 : 18, 'font-weight': 400,
-  }, captionLineHeight);
-  if (summary) {
-    output += text(right, titleY - 10, state.summary === 'average' ? 'в среднем' : 'всего', {
-      class: 'golos', fill: theme.muted, 'font-size': 18, 'text-anchor': 'end',
-    });
-    output += text(right, titleY + 28, formatValue(state.summary === 'average' ? summary.mean : summary.total, unit), {
-      class: 'mono', fill: theme.accent, 'font-size': 30, 'font-weight': 600, 'text-anchor': 'end',
-    });
+// Metrics come from the exact local fonts embedded below, including Cyrillic.
+function wrap(value,width,size,font='golos-text') {
+  const words=clean(value).split(/\s+/).filter(Boolean), result=[]; let current='';
+  for(const word of words) {
+    if(widthOf(current ? current+' '+word : word,size,font)<=width) { current=current ? current+' '+word : word; continue; }
+    if(current) { result.push(current); current=''; }
+    for(const char of word) {
+      if(current && widthOf(current+char,size,font)>width) { result.push(current); current=''; }
+      current+=char;
+    }
   }
-  output += `<line x1="${margin}" y1="${ruleY}" x2="${right}" y2="${ruleY}" stroke="${theme.line}" stroke-width="1"/>`;
-  return { markup: output, chartTop: ruleY + 35 };
+  if(current) result.push(current);
+  return result;
 }
-
-function axisTicks(min, max, count = 4) {
-  if (!Number.isFinite(min) || !Number.isFinite(max)) return [];
-  if (Math.abs(max - min) < 1e-9) return [min];
-  return Array.from({ length: count + 1 }, (_, index) => min + ((max - min) * index) / count);
+function lines(x,y,values,obj,gap) {
+  return `<text x="${x}" y="${y}" ${attrs(obj)}>${values.map((v,i)=>`<tspan x="${x}" dy="${i ? gap : 0}">${esc(v)}</tspan>`).join('')}</text>`;
 }
-
-function renderAxis({ min, max, x1, x2, y, theme, fontSize = 10 }) {
-  const ticks = axisTicks(min, max, 4);
-  const span = max - min || 1;
-  let output = '';
-  ticks.forEach((tick, index) => {
-    const x = x1 + ((tick - min) / span) * (x2 - x1);
-    output += `<line x1="${x}" y1="${y + 9}" x2="${x}" y2="${y + 19}" stroke="${theme.line}" stroke-width="1"/>`;
-    output += text(x, y, formatNumber(tick), {
-      class: 'mono', fill: theme.muted, 'font-size': fontSize, 'text-anchor': index === 0 ? 'start' : index === ticks.length - 1 ? 'end' : 'middle',
-    });
-  });
-  return output;
+function context(options={}) {
+  const {dataset={},state={},themeName='paper'}=options;
+  const rows=Array.isArray(options.rows) ? options.rows.slice(0,20) : [];
+  const columns=dataset.columns || [],headers=dataset.headers || [];
+  const categoryKey=state.categoryKey || columns.find(c=>c.type==='category')?.key || headers[0] || '';
+  const valueKey=state.valueKey || columns.find(c=>c.type==='number')?.key || headers[1] || '';
+  const dateKey=state.dateKey ?? columns.find(c=>c.type==='date')?.key ?? '';
+  const stories=state.size==='stories', width=stories ? 1080 : 1200,height=stories ? 1920 : 900,margin=stories ? 80 : 82;
+  return {state,dataset,rows,categoryKey,valueKey,dateKey,stories,width,height,margin,theme:THEMES[themeName]||THEMES.paper,mode:state.mode||'bars',unit:clean(state.unit)};
 }
-
-function renderBars({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, state }) {
-  const values = rows.map((row) => number(row?.[valueKey]));
-  const valid = values.filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'выберите числовую колонку или добавьте значения.' });
-  const min = Math.min(...valid, 0);
-  const max = Math.max(...valid, 0);
-  const span = Math.max(max - min, 1);
-  const labelWidth = width < 1100 ? 230 : 215;
-  const valueWidth = width < 1100 ? 130 : 118;
-  const plotLeft = margin + labelWidth;
-  const plotRight = width - margin - valueWidth;
-  const top = chartTop + 34;
-  const bottom = Math.max(top + 20, chartBottom - 10);
-  const rowHeight = (bottom - top) / Math.max(rows.length, 1);
-  const barHeight = clamp(rowHeight * 0.48, width < 1100 ? 9 : 8, width < 1100 ? 36 : 26);
-  const zeroX = plotLeft + ((0 - min) / span) * (plotRight - plotLeft);
-  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: 15 });
-  output += `<line x1="${zeroX}" y1="${top - 5}" x2="${zeroX}" y2="${bottom + 5}" stroke="${theme.ink}" stroke-width="1.2"/>`;
-  rows.forEach((row, index) => {
-    const value = values[index];
-    const y = top + index * rowHeight + (rowHeight - barHeight) / 2;
-    const centerY = y + barHeight / 2;
-    const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
-    output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" opacity=".65"/>`;
-    output += text(margin, centerY + clamp(rowHeight * .26, 5, 8), category, {
-      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .54, 12, 23),
-    });
-    if (value === null) {
-      const missingWidth = clamp(rowHeight * .7, 16, 28);
-      output += `<rect x="${zeroX - missingWidth / 2}" y="${y}" width="${missingWidth}" height="${barHeight}" rx="${barHeight / 2}" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width="1"/>`;
-      output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), '—', {
-        class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end',
-      });
-      return;
-    }
-    const barWidth = (Math.abs(value) / span) * (plotRight - plotLeft);
-    const x = value < 0 ? zeroX - barWidth : zeroX;
-    output += `<rect x="${x}" y="${y}" width="${Math.max(barWidth, value === 0 ? 1.5 : 0)}" height="${barHeight}" rx="${barHeight / 2}" fill="${theme.accent}"/>`;
-    output += text(width - margin, centerY + clamp(rowHeight * .26, 5, 8), formatValue(value, unit), {
-      class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end',
-    });
-  });
-  return output;
+function headerLayout(c) {
+  const room=c.width-c.margin*2;
+  let titleSize=c.stories ? 62 : 56;
+  let titleLines=wrap(c.state.title,room,titleSize,'literata');
+  while(titleLines.length>2&&titleSize>44) {titleSize-=2;titleLines=wrap(c.state.title,room,titleSize,'literata');}
+  const captionSize=c.stories ? 34 : 27;
+  const captionLines=wrap(c.state.caption,room,captionSize);
+  const titleY=c.margin+titleSize;
+  const titleBottom=titleLines.length ? titleY+(titleLines.length-1)*titleSize*1.18 : c.margin;
+  const captionY=titleBottom+(titleLines.length ? 38 : captionSize);
+  const bottom=captionLines.length ? captionY+(captionLines.length-1)*captionSize*1.36 : titleBottom;
+  return {titleSize,titleLines,captionSize,captionLines,titleY,captionY,chartTop:bottom+44};
 }
-
-function renderDots({ rows, categoryKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
-  const values = rows.map((row) => number(row?.[valueKey]));
-  const valid = values.filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'выберите числовую колонку или добавьте значения.' });
-  const min = Math.min(...valid, 0);
-  const max = Math.max(...valid, 0);
-  const span = Math.max(max - min, 1);
-  const labelWidth = width < 1100 ? 230 : 215;
-  const valueWidth = width < 1100 ? 130 : 118;
-  const plotLeft = margin + labelWidth;
-  const plotRight = width - margin - valueWidth;
-  const top = chartTop + 38;
-  const bottom = Math.max(top + 20, chartBottom - 10);
-  const rowHeight = (bottom - top) / Math.max(rows.length, 1);
-  const radius = clamp(rowHeight * .17, 4, width < 1100 ? 9 : 7);
-  let output = renderAxis({ min, max, x1: plotLeft, x2: plotRight, y: chartTop + 20, theme, fontSize: 15 });
-  rows.forEach((row, index) => {
-    const value = values[index];
-    const centerY = top + index * rowHeight + rowHeight / 2;
-    const category = shorten(row?.[categoryKey] ?? row?.date ?? `строка ${index + 1}`, width < 1100 ? 30 : 26);
-    output += `<line x1="${plotLeft}" y1="${centerY}" x2="${plotRight}" y2="${centerY}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="1 8"/>`;
-    output += text(margin, centerY + clamp(rowHeight * .22, 5, 8), category, {
-      class: 'golos', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23),
-    });
-    if (value === null) {
-      output += `<line x1="${plotLeft - 5}" y1="${centerY - radius}" x2="${plotLeft + 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/><line x1="${plotLeft + 5}" y1="${centerY - radius}" x2="${plotLeft - 5}" y2="${centerY + radius}" stroke="${theme.accent}" stroke-width="2"/>`;
-      output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), '—', { class: 'mono', fill: theme.muted, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end' });
-      return;
-    }
-    const x = plotLeft + ((value - min) / span) * (plotRight - plotLeft);
-    output += `<circle cx="${x}" cy="${centerY}" r="${radius}" fill="${theme.accent}" stroke="${theme.paper}" stroke-width="2"/>`;
-    output += text(width - margin, centerY + clamp(rowHeight * .22, 5, 8), formatValue(value, unit), { class: 'mono', fill: theme.ink, 'font-size': clamp(rowHeight * .52, 12, 23), 'text-anchor': 'end' });
-  });
-  return output;
-}
-
-function calendarEntries(rows, dateKey, valueKey) {
-  const groups = new Map();
-  const undated = [];
-  rows.forEach((row, index) => {
-    const date = asDate(row?.[dateKey]);
-    if (!date) { undated.push({ row, index }); return; }
-    const iso = isoDate(date);
-    const month = iso.slice(0, 7);
-    if (!groups.has(month)) groups.set(month, { date: new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), 1)), cells: new Map() });
-    if (!groups.get(month).cells.has(iso)) groups.get(month).cells.set(iso, []);
-    groups.get(month).cells.get(iso).push({ row, index, value: number(row?.[valueKey]), raw: row?.[valueKey] });
-  });
-  return { groups: [...groups.values()].sort((a, b) => a.date - b.date), undated };
-}
-
-function renderCalendar({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin, categoryKey }) {
-  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нужна колонка с датой', detail: 'выберите колонку с датой для календарной сетки.' });
-  const { groups, undated } = calendarEntries(rows, dateKey, valueKey);
-  if (!groups.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет корректных дат', detail: 'проверьте формат дат в выбранной колонке.' });
-  const stories = width < 1100;
-  const cols = Math.min(stories ? 3 : 5, groups.length);
-  const gap = stories ? 18 : 12;
-  const totalWidth = width - margin * 2;
-  const blockWidth = (totalWidth - gap * (cols - 1)) / cols;
-  const rowsOfBlocks = Math.ceil(groups.length / cols);
-  const maxWeeks = Math.max(...groups.map((group) => {
-    const first = group.date;
-    const offset = (first.getUTCDay() + 6) % 7;
-    return Math.ceil((offset + new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate()) / 7);
-  }));
-  const availableHeight = Math.max(110, chartBottom - chartTop - rowsOfBlocks * 35 - (rowsOfBlocks - 1) * gap);
-  const cellHeight = clamp(availableHeight / (rowsOfBlocks * maxWeeks), stories ? 18 : 14, stories ? 100 : 58);
-  const cellWidth = (blockWidth - 8) / 7;
-  const blockHeight = 33 + maxWeeks * cellHeight;
-  const weekdays = ['п', 'в', 'с', 'ч', 'п', 'с', 'в'];
-  const maxCalendarValue = Math.max(...rows.map((row) => Math.abs(number(row?.[valueKey]) ?? 0)), 1);
-  let output = '';
-  groups.forEach((group, groupIndex) => {
-    const col = groupIndex % cols;
-    const rowIndex = Math.floor(groupIndex / cols);
-    const x0 = margin + col * (blockWidth + gap);
-    const y0 = chartTop + rowIndex * (blockHeight + gap);
-    const first = group.date;
-    const offset = (first.getUTCDay() + 6) % 7;
-    const daysInMonth = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth() + 1, 0)).getUTCDate();
-    output += text(x0, y0 + 15, monthLabel(first), { class: 'literata', fill: theme.ink, 'font-size': stories ? 18 : 15, 'font-weight': 600 });
-    weekdays.forEach((weekday, weekdayIndex) => {
-      output += text(x0 + weekdayIndex * cellWidth + 2, y0 + 29, weekday, { class: 'mono', fill: theme.accent, 'font-size': stories ? 9 : 8 });
-    });
-    for (let day = 1; day <= daysInMonth; day += 1) {
-      const dayIndex = offset + day - 1;
-      const cellX = x0 + (dayIndex % 7) * cellWidth;
-      const cellY = y0 + 35 + Math.floor(dayIndex / 7) * cellHeight;
-      const date = new Date(Date.UTC(first.getUTCFullYear(), first.getUTCMonth(), day));
-      const iso = isoDate(date);
-      const entries = group.cells.get(iso) || [];
-      const numericEntries = entries.filter((entry) => entry.value !== null);
-      const hasMissing = entries.some((entry) => entry.value === null);
-      output += `<rect x="${cellX}" y="${cellY}" width="${Math.max(2, cellWidth - 3)}" height="${Math.max(2, cellHeight - 3)}" fill="${theme.paper}" stroke="${theme.line}" stroke-width=".8"/>`;
-      output += text(cellX + 3, cellY + clamp(cellHeight * .34, 8, 13), day, { class: 'mono', fill: theme.muted, 'font-size': stories ? 10 : 9 });
-      if (!entries.length) continue;
-      const titleValues = entries.map((entry) => entry.value === null ? '—' : formatValue(entry.value, unit)).join(', ');
-      const aggregate = numericEntries.reduce((sum, entry) => sum + entry.value, 0);
-      const ratio = Math.min(1, Math.abs(aggregate) / maxCalendarValue);
-      const innerWidth = Math.max(1, (cellWidth - 8) * (numericEntries.length ? Math.max(.08, ratio) : .08));
-      output += `<title>${esc(`${iso}: ${titleValues}`)}</title>`;
-      if (numericEntries.length) {
-        output += `<rect x="${cellX + 3}" y="${cellY + cellHeight - 8}" width="${innerWidth}" height="3" fill="${theme.accent}"/>`;
-        const valueLabel = entries.length > 1
-          ? `${entries.length}× · ${formatNumber(aggregate)}${numericEntries.length < entries.length ? ' · —' : ''}`
-          : formatNumber(numericEntries[0].value);
-        output += text(cellX + 3, cellY + cellHeight - 12, shorten(valueLabel, stories ? 12 : 10), { class: 'mono', fill: theme.ink, 'font-size': stories ? 9 : 8 });
-      } else {
-        output += `<rect x="${cellX + 2}" y="${cellY + cellHeight - 7}" width="${Math.max(1, cellWidth - 7)}" height="3" fill="url(#missing-hatch)"/>`;
-        const textValues = entries.map((entry) => entry.raw === null || entry.raw === undefined || String(entry.raw).trim() === '' ? '—' : String(entry.raw).trim()).join(' / ');
-        const textLabel = hasMissing && !textValues.replace(/([ —/])/g, '') ? '—' : (entries.length > 1 ? `${entries.length}× · ${textValues}` : textValues);
-        output += text(cellX + 3, cellY + cellHeight - 12, shorten(textLabel, stories ? 12 : 10), { class: 'mono', fill: theme.muted, 'font-size': stories ? 9 : 8 });
-      }
-      if (entries.length > 1 && numericEntries.length) output += text(cellX + cellWidth - 5, cellY + clamp(cellHeight * .34, 8, 13), `${entries.length}×`, { class: 'mono', fill: theme.accentAlt || theme.accent, 'font-size': stories ? 8 : 7, 'text-anchor': 'end' });
-    }
-  });
-  const lastRowY = chartTop + rowsOfBlocks * (blockHeight + gap) - gap;
-  if (undated.length) {
-    const undatedText = undated.slice(0, 3).map(({ row, index }) => `${shorten(row?.[categoryKey] ?? `строка ${index + 1}`, stories ? 15 : 18)} · ${formatValue(number(row?.[valueKey]), unit)}`).join('  |  ');
-    output += text(margin, Math.min(chartBottom - 12, lastRowY + 26), `без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
-    output += text(margin, Math.min(chartBottom + 4, lastRowY + 46), undatedText, { class: 'mono', fill: theme.muted, 'font-size': 10 });
+export function sceneDiagnostics(options={}) {
+  const c=context(options),warnings=[];
+  let message='';
+  if(!c.rows.length) message='нет строк для отображения';
+  else if(['timeline','calendar'].includes(c.mode) && !c.dateKey) message='нужна колонка с датой';
+  else if(['timeline','calendar'].includes(c.mode) && !c.rows.some(r=>date(r[c.dateKey]))) message='нет корректных дат';
+  else if(c.mode!=='calendar' && !c.rows.some(r=>num(r[c.valueKey])!==null && (c.mode!=='timeline'||date(r[c.dateKey])))) message='нет числовых значений';
+  const h=headerLayout(c),available=c.height-(c.stories?170:130)-h.chartTop;
+  const minimumSpace=c.mode==='timeline' ? Math.max(220,Math.ceil(c.rows.length/3)*32+170) : c.mode==='calendar' ? Math.max(160,Math.ceil(c.rows.length/3)*32+80) : Math.max(120,c.rows.length*22);
+  if(!message && available<minimumSpace) message='сократите текст или выберите сторис';
+  if(c.rows.length>12&&!c.stories) warnings.push('много строк для горизонтальной открытки: откройте крупный просмотр или выберите сторис.');
+  if(h.titleLines.length>2 || h.captionLines.length>4) warnings.push('длинный текст занимает большую часть открытки; проверьте крупный просмотр или сократите подпись.');
+  if(['bars','dots'].includes(c.mode)) {
+    const rowSpace=available/c.rows.length;
+    if(c.rows.some(r=>widthOf(r[c.categoryKey]??'',28)>320) || c.rows.some(r=>widthOf(fmt(num(r[c.valueKey])),28)>210)) warnings.push('длинные подписи перенесены; проверьте их в крупном просмотре.');
+    if(rowSpace<32) warnings.push('текст плотный: для чтения на телефоне лучше выбрать сторис или уменьшить число строк.');
   }
-  return output;
+  if(['calendar','timeline'].includes(c.mode) && c.rows.some(r=>!date(r[c.dateKey]))) warnings.push('строки без корректной даты перечислены отдельно.');
+  return {exportable:!message,message,warnings:[...new Set(warnings)]};
 }
-
-function timelineData(rows, dateKey, valueKey) {
-  const points = [];
-  const undated = [];
-  rows.forEach((row, index) => {
-    const date = asDate(row?.[dateKey]);
-    if (date) points.push({ date, iso: isoDate(date), value: number(row?.[valueKey]), row, index });
-    else undated.push({ row, index });
-  });
-  points.sort((a, b) => a.date - b.date || a.index - b.index);
-  const counts = new Map();
-  points.forEach((point) => counts.set(point.iso, (counts.get(point.iso) || 0) + 1));
-  const seen = new Map();
-  points.forEach((point) => { const n = counts.get(point.iso); point.duplicate = n > 1; point.ordinal = seen.get(point.iso) || 0; seen.set(point.iso, point.ordinal + 1); });
-  return { points, undated };
+function renderHeader(c,h) {
+  let out='';
+  if(h.titleLines.length) out+=lines(c.margin,h.titleY,h.titleLines,style(c.theme,h.titleSize,{class:'literata','font-weight':500}),h.titleSize*1.18);
+  if(h.captionLines.length) out+=lines(c.margin,h.captionY,h.captionLines,style(c.theme,h.captionSize,{fill:c.theme.muted}),h.captionSize*1.36);
+  return out+line(c.margin,h.chartTop-20,c.width-c.margin,h.chartTop-20,c.theme.line);
 }
-
-function renderTimeline({ rows, dateKey, valueKey, unit, theme, width, chartTop, chartBottom, margin }) {
-  if (!safeText(dateKey)) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нужна колонка с датой', detail: 'выберите колонку с датой для временного маршрута.' });
-  const { points, undated } = timelineData(rows, dateKey, valueKey);
-  if (!points.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет корректных дат', detail: 'проверьте формат дат в выбранной колонке.' });
-  const valid = points.map((point) => point.value).filter((value) => value !== null);
-  if (!valid.length) return renderMessage({ theme, width, chartTop, chartBottom, title: 'нет числовых значений', detail: 'добавьте значения для выбранной колонки.' });
-  const min = Math.min(...valid, 0);
-  const max = Math.max(...valid, 0);
-  const span = Math.max(max - min, 1);
-  const left = margin + 14;
-  const right = width - margin - 14;
-  const top = chartTop + 32;
-  const bottom = Math.max(top + 50, chartBottom - 46);
-  const dateMin = points[0].date.valueOf();
-  const dateMax = points[points.length - 1].date.valueOf();
-  const dateSpan = Math.max(dateMax - dateMin, 1);
-  const yFor = (value) => bottom - ((value - min) / span) * (bottom - top);
-  const xFor = (point) => {
-    const base = dateMax === dateMin ? (left + right) / 2 : left + ((point.date.valueOf() - dateMin) / dateSpan) * (right - left);
-    if (!point.duplicate) return base;
-    const total = points.filter((candidate) => candidate.iso === point.iso).length;
-    return base + (point.ordinal - (total - 1) / 2) * clamp((right - left) / Math.max(points.length, 10) * .32, 5, 13);
-  };
-  let output = '';
-  axisTicks(min, max, 4).forEach((tick) => {
-    const y = yFor(tick);
-    output += `<line x1="${left}" y1="${y}" x2="${right}" y2="${y}" stroke="${theme.line}" stroke-width="1" stroke-dasharray="2 8"/>`;
-    output += text(margin, y + 4, formatNumber(tick), { class: 'mono', fill: theme.muted, 'font-size': 17 });
-  });
-  output += `<line x1="${left}" y1="${bottom}" x2="${right}" y2="${bottom}" stroke="${theme.ink}" stroke-width="1.2"/>`;
-  let segment = [];
-  const segments = [];
-  points.forEach((point) => {
-    if (point.value === null) { if (segment.length) segments.push(segment); segment = []; return; }
-    segment.push(point);
-  });
-  if (segment.length) segments.push(segment);
-  segments.forEach((items) => {
-    const d = items.map((point, index) => `${index ? 'L' : 'M'} ${xFor(point)} ${yFor(point.value)}`).join(' ');
-    output += `<path d="${d}" fill="none" stroke="${theme.accent}" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>`;
-  });
-  const labelStep = points.length > 12 ? 2 : 1;
-  points.forEach((point, index) => {
-    const x = xFor(point);
-    const y = point.value === null ? bottom : yFor(point.value);
-    if (point.value === null) {
-      output += `<line x1="${x - 5}" y1="${bottom - 7}" x2="${x + 5}" y2="${bottom + 3}" stroke="${theme.accentAlt || theme.accent}" stroke-width="2"/>`;
-    } else {
-      output += `<circle cx="${x}" cy="${y}" r="${width < 1100 ? 6 : 5}" fill="${theme.paper}" stroke="${theme.accent}" stroke-width="2.5"/>`;
-      const labelY = y < top + 30 ? y + 22 : y - 14;
-      output += text(x, labelY, formatValue(point.value, unit), { class: 'mono', fill: theme.ink, 'font-size': 17, 'text-anchor': 'middle' });
-    }
-    if (index % labelStep === 0 || index === points.length - 1) {
-      output += `<line x1="${x}" y1="${bottom + 4}" x2="${x}" y2="${bottom + 12}" stroke="${theme.line}" stroke-width="1"/>`;
-      output += text(x, bottom + 31, dateLabel(point.date), { class: 'mono', fill: theme.muted, 'font-size': 16, 'text-anchor': 'middle' });
-    }
-  });
-  if (undated.length) {
-    const noteY = Math.min(chartBottom - 4, bottom + 42);
-    const sample = undated.slice(0, 3).map(({ row, index }) => shorten(row?.[valueKey] ?? `строка ${index + 1}`, width < 1100 ? 16 : 20)).join('  ·  ');
-    output += text(margin, noteY, `без корректной даты · ${undated.length} ${russianPlural(undated.length, 'строка', 'строки', 'строк')}`, { class: 'golos', fill: theme.accentAlt || theme.accent, 'font-size': 12 });
-    output += text(margin, Math.min(chartBottom + 16, noteY + 20), sample, { class: 'mono', fill: theme.muted, 'font-size': 10 });
+function rowKeys(c) {
+  const occurrences=new Map(),keys=new Map();
+  for(const row of [...new Set([...(c.dataset.rows||[]),...c.rows])]) {
+    const category=String(row[c.categoryKey]??''),n=occurrences.get(category)||0;
+    occurrences.set(category,n+1);keys.set(row,JSON.stringify([category,n]));
   }
-  return output;
+  return keys;
 }
-
-function renderMessage({ theme, width, chartTop, chartBottom, title, detail }) {
-  const centerX = width / 2;
-  const centerY = chartTop + Math.max(80, (chartBottom - chartTop) * .45);
-  return `<g>
-    <line x1="${width / 2 - 110}" y1="${centerY - 40}" x2="${width / 2 + 110}" y2="${centerY - 40}" stroke="${theme.line}"/>
-    ${text(centerX, centerY + 4, title, { class: 'literata', fill: theme.ink, 'font-size': width < 1100 ? 28 : 27, 'text-anchor': 'middle' })}
-    ${text(centerX, centerY + 34, detail, { class: 'golos', fill: theme.muted, 'font-size': width < 1100 ? 15 : 14, 'text-anchor': 'middle' })}
-  </g>`;
+function ticks(min,max) {
+  if(min===max) return [min];
+  const raw=(max-min)/4, magnitude=10**Math.floor(Math.log10(raw));
+  const step=[1,2,5,10].find(n=>n*magnitude>=raw)*magnitude;
+  const result=[min];
+  for(let n=Math.ceil(min/step)*step;n<max;n+=step) if(n>min+step*.05) result.push(n);
+  result.push(max);return result;
 }
-
-function renderFooter({ width, height, margin, theme, rows, valueKey, unit, mode }) {
-  const y = height - (width < 1100 ? 92 : 58);
-  const missing = rows.some((row) => {
-    const raw = row?.[valueKey];
-    if (raw === null || raw === undefined || String(raw).trim() === '') return true;
-    return mode !== 'calendar' && number(raw) === null;
-  });
-  let output = `<line x1="${margin}" y1="${y - 20}" x2="${width - margin}" y2="${y - 20}" stroke="${theme.line}" stroke-width="1"/>`;
-  if (missing) {
-    output += `<rect x="${margin}" y="${y - 8}" width="18" height="10" fill="url(#missing-hatch)" stroke="${theme.accent}" stroke-width=".8"/>`;
-    output += text(margin + 28, y + 1, 'нет значения', { class: 'golos', fill: theme.muted, 'font-size': 12 });
+function horizontalAxis(c,min,max,left,right,y,fontSize=22) {
+  let out='',last=-Infinity;const values=ticks(min,max),span=max-min||1;
+  values.forEach((n,i)=>{
+    const x=left+(n-min)/span*(right-left),label=fmt(n),w=widthOf(label,fontSize);
+    const start=i===0 ? x : i===values.length-1 ? x-w : x-w/2;
+    if(start<last+14&&i!==values.length-1) return;
+    if(i===values.length-1&&start<last+14) return;
+    last=start+w;out+=text(x,y,label,style(c.theme,fontSize,{fill:c.theme.muted,'text-anchor':i===0?'start':i===values.length-1?'end':'middle'}));
+  });return out;
+}
+function renderComparison(c,h,bottom) {
+  const values=c.rows.map(r=>num(r[c.valueKey])),valid=values.filter(v=>v!==null),min=Math.min(...valid,0),max=Math.max(...valid,0),span=max-min||1;
+  const keys=rowKeys(c),room=c.width-c.margin*2;
+  let size=c.stories ? 38 : 29;
+  let labelWidth=Math.min(room*.38,Math.max(190,...c.rows.map(r=>widthOf(r[c.categoryKey]??'',size)+22)));
+  const valueWidth=Math.min(room*.31,Math.max(110,...values.map(v=>widthOf(fmt(v),size)+22)));
+  let labels=c.rows.map((r,i)=>wrap(clean(r[c.categoryKey])||`строка ${i+1}`,labelWidth-20,size));
+  const top=h.chartTop+44,available=bottom-top;
+  let slots=labels.reduce((n,v)=>n+Math.max(1,v.length),0);
+  while(slots*size*1.22>available&&size>18) {size--;labels=c.rows.map((r,i)=>wrap(clean(r[c.categoryKey])||`строка ${i+1}`,labelWidth-20,size));slots=labels.reduce((n,v)=>n+Math.max(1,v.length),0);}
+  const left=c.margin+labelWidth,right=c.width-c.margin-valueWidth,plotWidth=Math.max(70,right-left),zero=left+(0-min)/span*plotWidth;
+  const rowUnit=available/slots;
+  let out=horizontalAxis(c,min,max,left,right,h.chartTop+23,22);
+  if(c.unit) out+=text(c.width-c.margin,h.chartTop+23,c.unit,style(c.theme,22,{fill:c.theme.muted,'text-anchor':'end'}));
+  out+=line(zero,top,zero,bottom,c.theme.line);
+  let offset=0;
+  c.rows.forEach((row,i)=>{
+    const value=values[i],n=Math.max(1,labels[i].length),rh=n*rowUnit,y=top+offset+rh/2,barHeight=clamp(rowUnit*.42,8,c.stories?36:26);
+    out+=`<g data-row-key="${esc(keys.get(row))}"><title>${esc(`${clean(row[c.categoryKey])}: ${clean(row[c.valueKey])||'нет значения'}`)}</title>`;
+    out+=lines(c.margin,y-(n-1)*size*.61+size*.32,labels[i],style(c.theme,size),size*1.22);
+    out+=line(left,y,right,y,c.theme.line,'opacity=".65"');
+    if(value===null) out+=`<rect x="${zero-10}" y="${y-barHeight/2}" width="20" height="${barHeight}" fill="url(#missing-hatch)"/>`;
+    else if(c.mode==='dots') out+=`<circle data-mark="dot" cx="${left+(value-min)/span*plotWidth}" cy="${y}" r="${clamp(rowUnit*.15,4,9)}" fill="${c.theme.accent}" stroke="${c.theme.paper}" stroke-width="2"/>`;
+    else out+=`<rect data-mark="bar" x="${value<0?zero-Math.abs(value)/span*plotWidth:zero}" y="${y-barHeight/2}" width="${Math.max(1.5,Math.abs(value)/span*plotWidth)}" height="${barHeight}" rx="${barHeight/2}" fill="${c.theme.accent}"/>`;
+    out+=text(c.width-c.margin,y+size*.32,fmt(value),style(c.theme,size,{'text-anchor':'end',class:'mono'}))+'</g>';
+    offset+=rh;
+  });return out;
+}
+function datedRows(c) {return c.rows.map((row,index)=>({row,index,date:date(row[c.dateKey]),value:num(row[c.valueKey])})).sort((a,b)=>(a.date?.valueOf()??Infinity)-(b.date?.valueOf()??Infinity)||a.index-b.index);}
+function renderRegister(c,entries,top,bottom,attribute='data-calendar-layout="register"') {
+  const cols=c.stories?1:(bottom-top<360 && entries.length>12 && entries.every(e=>e.value!==null) ? 3 : 2),count=Math.ceil(entries.length/cols),gap=38,block=(c.width-c.margin*2-gap*(cols-1))/cols;
+  let size=c.stories?36:27;
+  const rowLabels=()=>entries.map(e=>`${e.date?iso(e.date):'без даты'} · ${e.value===null ? clean(e.row[c.valueKey])||'—' : fmt(e.value)}`);
+  let wrapped=rowLabels().map(v=>wrap(v,block,size));
+  const needed=()=>Array.from({length:cols},(_,col)=>wrapped.slice(col*count,(col+1)*count).reduce((n,l)=>n+Math.max(1,l.length),0));
+  while(Math.max(...needed())*size*1.3+count*8>bottom-top&&size>18) {size--;wrapped=rowLabels().map(v=>wrap(v,block,size));}
+  let out=`<g ${attribute}>`;
+  for(let col=0;col<cols;col++) {
+    let y=top+size;const x=c.margin+col*(block+gap);
+    for(let j=0;j<count;j++) {
+      const index=col*count+j;if(index>=entries.length) break;
+      out+=lines(x,y,wrapped[index],style(c.theme,size),size*1.3);
+      y+=Math.max(1,wrapped[index].length)*size*1.3+8;
+    }
   }
-  if (safeText(unit)) output += text(width - margin, y + 1, safeText(unit), { class: 'mono', fill: theme.muted, 'font-size': 12, 'text-anchor': 'end' });
-  return output;
+  return out+'</g>';
 }
-
-export function buildScene({ rows = [], state = {}, dataset = {}, themeName = 'paper' } = {}) {
-  state = state || {};
-  const theme = THEMES[themeName] || THEMES.paper;
-  const stories = state.size === 'stories';
-  const width = stories ? 1080 : 1200;
-  const height = stories ? 1920 : 900;
-  const margin = stories ? 88 : 90;
-  const mode = state.mode || 'bars';
-  const columns = Array.isArray(dataset?.columns) ? dataset.columns : [];
-  const headers = Array.isArray(dataset?.headers) ? dataset.headers : [];
-  const categoryKey = state.categoryKey || columns.find((column) => column.type === 'category')?.key || headers[0] || '';
-  const valueKey = state.valueKey || columns.find((column) => column.type === 'number')?.key || headers[1] || '';
-  const dateKey = state.dateKey ?? columns.find((column) => column.type === 'date')?.key ?? '';
-  const unit = safeText(state.unit);
-  const safeRows = Array.isArray(rows) ? rows.slice(0, 20) : [];
-  const header = renderHeader({ state, theme, width, margin, rows: safeRows, valueKey, unit });
-  const chartBottom = height - (stories ? 138 : 104);
-  const payload = { rows: safeRows, categoryKey, valueKey, dateKey, unit, theme, width, chartTop: header.chartTop, chartBottom, margin, state };
-  let chart;
-  if (!safeRows.length) chart = renderMessage({ theme, width, chartTop: header.chartTop, chartBottom, title: 'нет строк для отображения', detail: 'добавьте строки данных, чтобы собрать открытку.' });
-  else if (mode === 'calendar') chart = renderCalendar(payload);
-  else if (mode === 'timeline') chart = renderTimeline(payload);
-  else if (mode === 'dots') chart = renderDots(payload);
-  else chart = renderBars(payload);
-  const body = `${baseDefs(theme)}<style>${FONT_CSS}</style><rect width="${width}" height="${height}" fill="${theme.paper}"/><rect width="${width}" height="${height}" fill="url(#paper-lines)"/>${header.markup}<g aria-label="${esc(mode)}">${chart}</g>${renderFooter({ width, height, margin, theme, rows: safeRows, valueKey, unit, mode })}`;
-  const title = safeText(state.title, 'новая заметка');
-  const caption = safeText(state.caption, 'маленькая история из ваших строк.');
-  return `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" role="img" aria-labelledby="scene-title scene-desc"><title id="scene-title">${esc(title)}</title><desc id="scene-desc">${esc(caption)}</desc>${body}</svg>`;
+function renderCalendar(c,h,bottom) {
+  const entries=datedRows(c),dated=entries.filter(e=>e.date),undated=entries.filter(e=>!e.date),first=dated[0].date,last=dated.at(-1).date;
+  const seen=new Set(),duplicates=dated.some(e=>{const key=iso(e.date);if(seen.has(key))return true;seen.add(key);return false;});
+  const day=86400000,span=Math.round((last-first)/day);
+  const occupiedWeeks=Math.ceil((span+(first.getUTCDay()+6)%7+1)/7);
+  const register=span>34||duplicates||dated.some(e=>e.value===null&&clean(e.row[c.valueKey]))||undated.length||(bottom-h.chartTop-78)/occupiedWeeks<100;
+  let out=text(c.margin,h.chartTop+25,first.getUTCMonth()===last.getUTCMonth()&&first.getUTCFullYear()===last.getUTCFullYear()?monthDate(first):`${iso(first)} — ${iso(last)}`,style(c.theme,c.stories?34:28,{class:'literata'}));
+  if(c.unit) out+=text(c.width-c.margin,h.chartTop+25,c.unit,style(c.theme,24,{'text-anchor':'end',fill:c.theme.muted}));
+  if(register) {
+    if(undated.length) out+=text(c.margin,bottom-2,`без корректной даты · ${undated.length} ${plural(undated.length)}`,style(c.theme,22,{fill:c.theme.muted}));
+    return out+renderRegister(c,entries,h.chartTop+48,bottom-(undated.length?35:0));
+  }
+  const start=new Date(first);start.setUTCDate(start.getUTCDate()-(start.getUTCDay()+6)%7);
+  const end=new Date(last);end.setUTCDate(end.getUTCDate()+(6-(end.getUTCDay()+6)%7));
+  const weeks=Math.round((end-start)/day+1)/7,cellWidth=(c.width-c.margin*2)/7,top=h.chartTop+78,cellHeight=(bottom-top)/weeks;
+  const lookup=new Map(dated.map(e=>[iso(e.date),e]));
+  ['п','в','с','ч','п','с','в'].forEach((v,i)=>{out+=text(c.margin+i*cellWidth+12,top-20,v,style(c.theme,24,{fill:c.theme.muted}));});
+  out+='<g data-calendar-layout="weeks">';
+  for(let n=0;n<weeks*7;n++) {
+    const d=new Date(start.valueOf()+n*day),e=lookup.get(iso(d)),x=c.margin+n%7*cellWidth,y=top+Math.floor(n/7)*cellHeight;
+    out+=`<g><title>${esc(`${iso(d)}: ${e ? clean(e.row[c.valueKey])||'нет значения' : 'нет записи'}`)}</title><rect x="${x}" y="${y}" width="${cellWidth}" height="${cellHeight}" fill="none" stroke="${c.theme.line}"/>`;
+    out+=text(x+12,y+32,`${String(d.getUTCDate()).padStart(2,'0')}.${String(d.getUTCMonth()+1).padStart(2,'0')}`,style(c.theme,24,{fill:c.theme.muted}));
+    if(e) {out+=text(x+12,y+Math.min(cellHeight-22,78),fmt(e.value),style(c.theme,c.stories?34:28));if(e.value===null)out+=`<rect x="${x+12}" y="${y+cellHeight-15}" width="${cellWidth-24}" height="5" fill="url(#missing-hatch)"/>`;}
+    out+='</g>';
+  }
+  return out+'</g>';
+}
+function renderTimeline(c,h,bottom) {
+  const entries=datedRows(c),points=entries.filter(e=>e.date),undated=entries.filter(e=>!e.date),values=points.map(e=>e.value).filter(v=>v!==null);
+  const min=Math.min(...values,0),max=Math.max(...values,0),span=max-min||1;
+  const duplicates=points.some((e,i)=>i&&iso(e.date)===iso(points[i-1].date));
+  const tickWidth=Math.max(...ticks(min,max).map(v=>widthOf(fmt(v),22)))+24;
+  const left=c.margin+tickWidth,right=c.width-c.margin-36,top=h.chartTop+40;
+  const first=points[0].date.valueOf(),last=points.at(-1).date.valueOf(),ds=last-first||1;
+  const x=e=> first===last ? (left+right)/2 : left+(e.date.valueOf()-first)/ds*(right-left);
+  // A short series can still cluster on one end of a long time range. Test the
+  // actual label boxes before deciding whether the values need a register.
+  const directBottom=Math.max(top+100,bottom-55),size=c.stories?32:27;
+  const candidates=points.map(e=>{
+    const py=e.value===null?directBottom:directBottom-(e.value-min)/span*(directBottom-top),w=widthOf(fmt(e.value),size);
+    return {x:clamp(x(e)-w/2,left,right-w),y:py<top+44?py+38:py-18,w};
+  });
+  const collide=candidates.some((a,i)=>candidates.slice(i+1).some(b=>Math.abs(a.y-b.y)<size+8&&a.x<b.x+b.w+10&&a.x+a.w+10>b.x));
+  const ledger=duplicates||points.length>10||undated.length||collide;
+  const ledgerHeight=ledger ? Math.min((c.stories?entries.length:Math.ceil(entries.length/2))*(c.stories?44:35)+35,(bottom-h.chartTop)*.62) : 0;
+  const plotBottom=Math.max(top+100,bottom-ledgerHeight-55);
+  const y=v=>plotBottom-(v-min)/span*(plotBottom-top);
+  let out='';
+  ticks(min,max).forEach(v=>{out+=line(left,y(v),right,y(v),c.theme.line);out+=text(left-20,y(v)+7,fmt(v),style(c.theme,22,{fill:c.theme.muted,'text-anchor':'end'}));});
+  if(c.unit) out+=text(c.width-c.margin,h.chartTop+20,c.unit,style(c.theme,24,{fill:c.theme.muted,'text-anchor':'end'}));
+  let segment=[];
+  const flush=()=>{if(segment.length)out+=`<path data-route="" d="${segment.map((e,i)=>`${i?'L':'M'} ${x(e)} ${y(e.value)}`).join(' ')}" fill="none" stroke="${c.theme.accent}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>`;segment=[];};
+  points.forEach(e=>{if(e.value===null)flush();else segment.push(e);});flush();
+  points.forEach(e=>{
+    const px=x(e),py=e.value===null?plotBottom:y(e.value),label=fmt(e.value),size=c.stories?32:27;
+    out+=`<g><title>${esc(`${iso(e.date)}: ${clean(e.row[c.valueKey])||'нет значения'}`)}</title>`;
+    if(e.value===null)out+=line(px-6,py-6,px+6,py+6,c.theme.accent,'stroke-width="3"');
+    else out+=`<circle cx="${px}" cy="${py}" r="6" fill="${c.theme.paper}" stroke="${c.theme.accent}" stroke-width="3"/>`;
+    if(!ledger) {
+      const w=widthOf(label,size),lx=clamp(px-w/2,left,right-w),ly=py<top+44?py+38:py-18;
+      out+=text(lx,ly,label,style(c.theme,size));
+    }
+    out+='</g>';
+  });
+  const tickDates=first===last?[points[0].date]:[points[0].date,new Date(first+(last-first)/2),points.at(-1).date];
+  tickDates.forEach((d,i)=>{const px=first===last?(left+right)/2:left+(d-first)/ds*(right-left);out+=text(px,plotBottom+38,shortDate(d),style(c.theme,24,{fill:c.theme.muted,'text-anchor':i===0?'start':i===tickDates.length-1?'end':'middle'}));});
+  if(ledger)out+=renderRegister(c,entries,plotBottom+60,bottom-(undated.length?28:0),'data-timeline-ledger=""');
+  if(undated.length)out+=text(c.margin,bottom,`без корректной даты · ${undated.length} ${plural(undated.length)}`,style(c.theme,22,{fill:c.theme.muted}));
+  return out;
+}
+function renderFooter(c) {
+  const y=c.height-(c.stories?88:66),numbers=c.rows.map(r=>num(r[c.valueKey])).filter(v=>v!==null),summary=c.state.summary==='none'?null:numbers.length ? (c.state.summary==='average'?numbers.reduce((a,b)=>a+b,0)/numbers.length:numbers.reduce((a,b)=>a+b,0)) : null;
+  let out=line(c.margin,y-30,c.width-c.margin,y-30,c.theme.line);
+  if(c.rows.some(r=>!clean(r[c.valueKey])))out+=`<rect x="${c.margin}" y="${y-10}" width="20" height="12" fill="url(#missing-hatch)"/>`+text(c.margin+32,y+3,'нет значения',style(c.theme,22,{fill:c.theme.muted}));
+  if(summary!==null) { const label=`${c.state.summary==='average'?'в среднем':'всего'} · ${fmt(summary)}${c.unit?' '+c.unit:''}`; const free=c.width-c.margin*2-(c.rows.some(r=>!clean(r[c.valueKey]))?220:0); const size=Math.min(c.stories?36:32,free/widthOf(label,1)); out+=text(c.width-c.margin,y+8,label,style(c.theme,size,{'text-anchor':'end',fill:c.theme.accent})); }
+  return out;
+}
+function describe(c) {
+  const modes={bars:'столбики',dots:'точки',calendar:'календарь',timeline:'линия по датам'},values=c.rows.map(r=>num(r[c.valueKey])).filter(v=>v!==null),dates=c.rows.map(r=>date(r[c.dateKey])).filter(Boolean).sort((a,b)=>a-b);
+  const aggregate=c.state.summary==='none'||!values.length?'':`${c.state.summary==='average'?'в среднем':'всего'} ${fmt(c.state.summary==='average'?values.reduce((a,b)=>a+b,0)/values.length:values.reduce((a,b)=>a+b,0))} ${c.unit}. `;
+  return `${clean(c.state.caption)} ${modes[c.mode]}. ${c.rows.length} ${plural(c.rows.length)}. ${dates.length?`даты от ${iso(dates[0])} до ${iso(dates.at(-1))}. `:''}${aggregate}${c.rows.map((r,i)=>`${clean(r[c.categoryKey])||'строка '+(i+1)}${c.dateKey?' · '+(clean(r[c.dateKey])||'без даты'):''}: ${clean(r[c.valueKey])||'нет значения'}`).join('; ')}.`.trim();
+}
+export function buildScene(options={}) {
+  const c=context(options),diagnostics=sceneDiagnostics(options),bottom=c.height-(c.stories?170:130);
+  const cramped=diagnostics.message==='сократите текст или выберите сторис';
+  const h=headerLayout(cramped ? {...c,state:{...c.state,title:'',caption:''}} : c);
+  let chart='';
+  if(!diagnostics.exportable) {
+    const detail=cramped?'для графика не осталось достаточно места.':!c.rows.length?'добавьте строки данных, чтобы собрать открытку.':diagnostics.message.includes('дат')?'выберите колонку с датой и проверьте её значения.':'выберите числовую колонку или добавьте значения.';
+    chart=text(c.width/2,(h.chartTop+bottom)/2,diagnostics.message,style(c.theme,32,{'text-anchor':'middle',class:'literata'}))+text(c.width/2,(h.chartTop+bottom)/2+42,detail,style(c.theme,24,{'text-anchor':'middle',fill:c.theme.muted}));
+  } else if(c.mode==='calendar')chart=renderCalendar(c,h,bottom);
+  else if(c.mode==='timeline')chart=renderTimeline(c,h,bottom);
+  else chart=renderComparison(c,h,bottom);
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${c.width}" height="${c.height}" viewBox="0 0 ${c.width} ${c.height}" role="img" aria-labelledby="scene-title scene-desc"><title id="scene-title">${esc(clean(c.state.title)||'открытка с данными')}</title><desc id="scene-desc">${esc(describe(c))}</desc><defs><pattern id="missing-hatch" width="10" height="10" patternUnits="userSpaceOnUse"><path d="M-2 2L2 -2M0 10L10 0M8 12L12 8" stroke="${c.theme.accent}" stroke-width="1" opacity=".6"/></pattern></defs><style>${EMBEDDED_FONT_CSS}.literata{font-family:'Literata',Georgia,serif}.golos,.mono{font-family:'Golos Text',Arial,sans-serif}.mono{font-variant-numeric:tabular-nums}</style><rect width="${c.width}" height="${c.height}" fill="${c.theme.paper}"/><g data-scene="header">${renderHeader(c,h)}</g><g data-scene="chart" aria-label="${esc(c.mode)}">${chart}</g><g data-scene="footer">${renderFooter(c)}</g></svg>`;
 }

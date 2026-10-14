@@ -68,3 +68,53 @@ test('calendar labels keep the postcard copy in lowercase', () => {
   assert.match(svg, /октябрь 2026 г/);
   assert.match(svg, />п<\/text>/);
 });
+
+test('the scene exposes export eligibility and full density warnings', async () => {
+  const { sceneDiagnostics } = await import('../src/scene.js');
+  assert.equal(typeof sceneDiagnostics, 'function');
+  assert.equal(sceneDiagnostics({ rows: [], state: { mode: 'bars' } }).exportable, false);
+  assert.equal(sceneDiagnostics({ rows: [{ n: 'встреча', date: '2026-10-02' }], state: { mode: 'calendar', valueKey: 'n', dateKey: 'date' } }).exportable, true);
+  assert.equal(sceneDiagnostics({ rows: [{ v: 1 }], state: { mode: 'timeline', valueKey: 'v', dateKey: '' } }).exportable, false);
+  assert.ok(sceneDiagnostics({ rows: Array.from({length:20}, (_,i) => ({ n: 'категория '+i, v: i })), state: { mode:'bars', categoryKey:'n',valueKey:'v', size:'landscape' } }).warnings.length);
+});
+
+test('summary belongs to the footer and actual local fonts are embedded', () => {
+  const svg = buildScene({ rows: [{name:'пн',value:10},{name:'вт',value:20}],state:{title:'чтение',caption:'',categoryKey:'name',valueKey:'value',summary:'total',unit:'мин'} });
+  assert.match(svg, /data-scene="footer"[^]*всего/);
+  assert.doesNotMatch(svg, /paper-lines|маленькая история|без названия/);
+  assert.match(svg, /@font-face[^]*data:font\/woff2;base64/);
+  assert.match(svg, /<desc[^]*2 строки/);
+});
+
+test('sparse calendar keeps every text event in a readable register', () => {
+  const rows=Array.from({length:20},(_,i)=>({date:`${2025+Math.floor(i/12)}-${String(i%12+1).padStart(2,'0')}-01`,event:'событие '+i}));
+  const svg=buildScene({rows,state:{mode:'calendar',dateKey:'date',valueKey:'event'}});
+  assert.match(svg,/data-calendar-layout="register"/);
+  for(let i=0;i<20;i++) assert.match(svg,new RegExp('событие '+i+'(?:<|;)'));
+});
+
+test('duplicate timeline dates retain individual values without overlapping point labels', () => {
+  const svg=buildScene({rows:[{date:'2026-10-01',value:1},{date:'2026-10-01',value:2},{date:'2026-10-02',value:3}],state:{mode:'timeline',dateKey:'date',valueKey:'value'}});
+  assert.match(svg,/data-timeline-ledger/);
+  assert.match(svg,/2026-10-01 · 1/);
+  assert.match(svg,/2026-10-01 · 2/);
+});
+
+test('maximal broad-glyph copy blocks export when the date chart has no room', async () => {
+  const { sceneDiagnostics } = await import('../src/scene.js');
+  const rows=Array.from({length:20},(_,i)=>({date:`2026-10-${String(i+1).padStart(2,'0')}`,value:i+1}));
+  for(const mode of ['calendar','timeline']) {
+    const options={rows,state:{mode,dateKey:'date',valueKey:'value',size:'landscape',title:'W'.repeat(120),caption:'W'.repeat(300)}};
+    assert.equal(sceneDiagnostics(options).exportable,false,mode);
+    assert.match(sceneDiagnostics(options).message,/сократите текст|сторис/);
+  }
+});
+
+test('extreme numeric labels use compact notation and retain exact source values', () => {
+  const svg=buildScene({rows:[{name:'один',value:1e30},{name:'два',value:2e30}],state:{mode:'bars',categoryKey:'name',valueKey:'value',summary:'none'}});
+  assert.match(svg,/>1e30<\/text>/);
+  assert.match(svg,/>2e30<\/text>/);
+  assert.match(svg,/<title>один: 1e\+30<\/title>/);
+  const tiny=buildScene({rows:[{name:'один',value:1e-30},{name:'два',value:2e-30}],state:{mode:'bars',categoryKey:'name',valueKey:'value',summary:'none'}});
+  assert.match(tiny,/>1e-30<\/text>/);
+});

@@ -130,3 +130,8 @@ export default {
   fileImportError,
   MAX_FILE_BYTES
 };
+
+/** Hide empty cells without treating text events or zero as missing. */
+export function filterMissingRows(rows = [], key = '', showMissing = true) {
+  return rows.filter(row => showMissing || (row?.[key] != null && String(row[key]).trim() !== ''));
+}
