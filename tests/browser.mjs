@@ -18,7 +18,21 @@ let checks = 0;
 const check = (condition, message) => { assert.ok(condition, message); checks += 1; };
 try {
   if (!url) {
-    server = spawn('python3', ['-u', '-m', 'http.server', '0', '--bind', '127.0.0.1'], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
+    const serverScript = `
+from http.server import SimpleHTTPRequestHandler, test
+from urllib.parse import urlsplit, urlunsplit
+
+class ProjectHandler(SimpleHTTPRequestHandler):
+    def translate_path(self, path):
+        parts = urlsplit(path)
+        prefix = '/data-postcard'
+        if parts.path == prefix or parts.path.startswith(prefix + '/'):
+            path = urlunsplit(parts._replace(path=parts.path[len(prefix):] or '/'))
+        return super().translate_path(path)
+
+test(HandlerClass=ProjectHandler, port=0, bind='127.0.0.1')
+`;
+    server = spawn('python3', ['-u', '-c', serverScript], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] });
     url = await new Promise((resolve, reject) => {
       let output = '';
       let stderr = '';

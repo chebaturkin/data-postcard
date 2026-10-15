@@ -1,3 +1,11 @@
 node_modules/
 test-results/
 .DS_Store
+
+# Local author and agent notes
+AGENTS.md
+AGENT_PROMPT.md
+docs/superpowers/
+.codex/
+.superpowers/
+.worktrees/

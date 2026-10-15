@@ -1,10 +1,10 @@
+**english** · [русский](README.ru.md)
+
 # data postcard
 
-english · [русский](README.ru.md)
+turn a small table into a chart for a post, report or personal note. enter numbers, add a title and caption, choose a design and download a postcard. five fictional examples let you try the editor before importing your own data.
 
-small charts for posts, reports and personal notes. enter numbers in a table, add a title and caption, choose a design and download a postcard.
-
-[open the editor ↗](https://chebaturkin.github.io/data-postcard/?lang=en) · [открыть по-русски](https://chebaturkin.github.io/data-postcard/?lang=ru)
+[open in english ↗](https://chebaturkin.github.io/data-postcard/?lang=en) · [open in russian](https://chebaturkin.github.io/data-postcard/?lang=ru)
 
 ![data postcard editor with a chart and its source table](docs/images/en/editor.png)
 
@@ -72,32 +72,44 @@ this is a static html, css and javascript site. running it needs no build or dep
 python3 -m http.server 8000
 ```
 
-open the [local editor](http://localhost:8000).
+open the local editor in [english](http://localhost:8000/?lang=en) or [russian](http://localhost:8000/?lang=ru). serve the project directory so the browser can load javascript modules and local fonts.
 
 ## checks and captures
 
 ```bash
 npm test
-npm install
+```
+
+browser checks use the locked development dependency:
+
+```bash
+npm ci
 npx playwright install chromium
 npm run test:browser
 node tests/scene-layout-browser.mjs
+```
+
+the browser suite starts its own static server. language and export checks use the server from the local-run step:
+
+```bash
 python3 -m pip install playwright
 python3 -m playwright install chromium
 APP_URL=http://localhost:8000/ python3 tests/verify-i18n.py
+APP_URL=http://localhost:8000/ python3 tests/verify-export-snapshot.py
 ```
 
-the browser suite starts a static server and checks import, errors, current download data, keyboard controls, drafts, portable files, blocked storage, animation and layout from 320 to 1440 px. the scene checks cover long text, twenty categories and dates close together. locale checks cover browser defaults, pending edits, errors, exports and persistence in both languages.
+the suite checks import, errors, current download data, keyboard controls, drafts, portable files, blocked storage, animation and layout from 320 to 1440 px. scene checks cover long text, twenty categories and dates close together. language checks cover defaults, pending edits, errors, exports and persistence. the export regression confirms that a png keeps its starting scene and filename when the editor changes language during image decoding.
+
+refresh both language sets from the running editor:
 
 ```bash
-npm run screenshots
 APP_URL=http://localhost:8000/ python3 tests/capture-bilingual.py
 ```
 
-the first command refreshes the russian captures. the second captures both languages, including actual downloaded results.
+this captures the desktop and mobile editor, downloads three png examples and regenerates all five source datasets and svg results in both languages. russian files are in `docs/images/` and `examples/`; english files are in their `en/` subdirectories.
 
 ## source and deployment
 
 [`examples/`](examples/) contains the five csv/json datasets and their svg results. english versions live in [`examples/en/`](examples/en/). `i18n.js` owns the local dictionaries and locale selection; user data keeps its original keys and text.
 
-the [workflow](.github/workflows/pages.yml) publishes `master` to github pages. the [workflow design note](docs/superpowers/specs/2026-10-14-local-workflow-design.md) records the local editing decisions.
+the [workflow](.github/workflows/pages.yml) publishes `master` to github pages. `src/data.js` and `src/editor.js` handle tables; `src/project.js` handles portable drafts; `src/scene.js` and `src/export.js` render and download the result. [font sources and licences](assets/fonts/README.md) are included with the local font files.
